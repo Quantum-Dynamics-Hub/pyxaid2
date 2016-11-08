@@ -1,5 +1,5 @@
 #***********************************************************
-# * Copyright (C) 2013 Alexey V. Akimov
+# * Copyright (C) 2013-2015 Alexey V. Akimov
 # * This file is distributed under the terms of the
 # * GNU General Public License as published by the
 # * Free Software Foundation; either version 3 of the
@@ -10,6 +10,18 @@
 import os
 import sys
 from pyxaid_core import *
+
+# Fisrt, we add the location of the library to test to the PYTHON path
+if sys.platform=="cygwin":
+    from cyglibra_core import *
+elif sys.platform=="linux" or sys.platform=="linux2":
+    from liblibra_core import *
+from libra_py import *
+
+
+
+
+
 
 
 def get_value(params,key,default,typ):
@@ -56,18 +68,19 @@ def runMD(params):
     start_indx = get_value(params,"start_indx","0","i")
     stop_indx = get_value(params,"stop_indx","1","i")
     dt = get_value(params,"dt","1.0","f") # time step in fs - rescale NAC if actual dt is different
+    dt = 41.34145 * dt # convert to a.u., so the NACs are in a.u.
     pp_type = get_value(params,"pp_type","NC","s")
     wd = get_value(params,"wd","wd","s")
     rd = get_value(params,"rd",wd,"s")
     minband = get_value(params,"minband",1,"i")
     maxband = get_value(params,"maxband",2,"i")
-    nocc = get_value(params,"nocc",1,"i")
-    nac_method = get_value(params,"nac_method",0,"i")  # choose what method for NAC calculations to use: 0 -standard, 1-corrected
+#    nocc = get_value(params,"nocc",1,"i")
+#    nac_method = get_value(params,"nac_method",0,"i")  # choose what method for NAC calculations to use: 0 -standard, 1-corrected
     prefix0 = get_value(params,"prefix0","x0.scf","s")
-    prefix1 = get_value(params,"prefix1","x1.scf","s")
+#    prefix1 = get_value(params,"prefix1","x1.scf","s")
 
-    wfc_preprocess = get_value(params,"wfc_preprocess","restore","s") # variants are: normalize, complete, restore
-    do_complete = get_value(params,"do_complete",1,"i") # argument for option "restore"
+#    wfc_preprocess = get_value(params,"wfc_preprocess","restore","s") # variants are: normalize, complete, restore
+#    do_complete = get_value(params,"do_complete",1,"i") # argument for option "restore"
     
     compute_Hprime = get_value(params,"compute_Hprime",0,"i") # transition dipole moments
 
@@ -79,19 +92,24 @@ def runMD(params):
     if(minband>maxband):
         print "Error: minband must be smaller or equal to maxband. Current values: minband = ",minband," maxband = ",maxband
         sys.exit(0)
-    if(nocc>maxband):
-        print "Error: nocc must be smaller or equal to maxband. Current values: nocc = ",nocc," maxband = ",maxband
-        sys.exit(0)
-    if(nocc<minband):
-        print "Error: nocc must be larger or equal to minband. Current values: nocc = ",nocc," minband = ",minband
-        sys.exit(0)
+#    if(nocc>maxband):
+#        print "Error: nocc must be smaller or equal to maxband. Current values: nocc = ",nocc," maxband = ",maxband
+#        sys.exit(0)
+#    if(nocc<minband):
+#        print "Error: nocc must be larger or equal to minband. Current values: nocc = ",nocc," minband = ",minband
+#        sys.exit(0)
 
     # Convert minband, maxband and nocc from external (QE-consistent, starting from 1) convetion
     # to the internal one (starting from 0)    
-    minband = minband - 1
-    maxband = maxband - 1
-    nocc = nocc - 1
+#    minband = minband - 1
+#    maxband = maxband - 1
+#    nocc = nocc - 1
 
+    # Use this for nspin = 1 or 2
+    act_sp1 = range(minband, maxband+1)     # min = 1, max = 2 => range(1,3) = [1,2]
+
+    # Use this for nspin = 4
+    act_sp2 = range(2*minband-1, 2*(maxband+1)-1 ) # min =1, max = 2 => range(1,5) = [1,2,3,4]
 
 
     # Initialize variables
@@ -106,198 +124,112 @@ def runMD(params):
 
     while t<=stop_indx:
         print "t= ", t
-        print "initializing variables"
-        # Initialize variables
-        # Wavefunctions for the neutral system
-        curr_wfc0 = wfc()
-        next_wfc0 = wfc()
-        # Auxiliary wavefunction for the neutral system
-        curr_tmp0 = wfc()
-        next_tmp0 = wfc()
 
-        # Wavefunctions for the charged system - will be used if nac_method==1
-        curr_wfc1 = wfc()
-        next_wfc1 = wfc()
-        # Auxiliary wavefunction for the charged system
-        curr_tmp1 = wfc()
-        next_tmp1 = wfc()
- 
-
+        dirname = ""
         if t==start_indx:
-            print "Starting first point in this batch"
-            # Run calculations
-            os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix0,t,prefix0,t) )
-            os.system( "%s -n %s %s < x0.exp.in > x0.exp.out" % (BATCH_SYSTEM,NP,EXE_EXPORT) )
-            # Create temporary directory
-            os.system("mkdir %s/curr0" % wd )
-            # Copy some results to that directory
-            os.system( "mv %s.%d.out %s/curr0" % (prefix0,t, wd) )
-            os.system( "mv *.wfc* %s/curr0" % wd )
-            os.system( "mv x0.export %s/curr0" % wd ) # "x0" - corresponds to x0 as a prefix in input files
+           print "Starting first point in this batch"
+           dirname = "curr0"
+
+        if t>start_indx:
+           print "Continuing with other points in this batch"
+           dirname = "next0"
 
 
-            if nac_method>=1:  # In addition compute the charged system
-                os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix1,t,prefix1,t) )
-                os.system( "%s -n %s %s < x1.exp.in > x1.exp.out" % (BATCH_SYSTEM,NP,EXE_EXPORT) )
+        # A common block
+        # Run calculations
+        os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix0,t,prefix0,t) )
+        os.system( "%s -n %s %s < x0.exp.in > x0.exp.out" % (BATCH_SYSTEM,NP,EXE_EXPORT) )
 
-                os.system("mkdir %s/curr1" % wd )
-                os.system( "mv %s.%d.out %s/curr1" % (prefix1,t, wd) )
-                os.system( "mv *.wfc* %s/curr1" % wd )
-                os.system( "mv x1.export %s/curr1" % wd ) # "x1" - corresponds to x1 as a prefix in input files
-        
+        # Create temporary directory
+        os.system("mkdir %s/%s" % (wd, dirname) )
 
-            #sys.exit(0)
+        # Copy some results to that directory
+        os.system( "mv %s.%d.out %s/%s" % (prefix0,t, wd, dirname) )
+        os.system( "mv *.wfc* %s/%s" % (wd, dirname) )
+        os.system( "mv x0.export %s/%s" % (wd, dirname) ) # "x0" - corresponds to x0 as a prefix in input files
 
-        elif t>start_indx:
-            print "Continuing with other points in this batch"
-            # Run calculations
-            os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix0,t,prefix0,t) )
-            os.system( "%s -n %s %s < x0.exp.in > x0.exp.out" % (BATCH_SYSTEM,NP,EXE_EXPORT) )
-            # Create temporary directory
-            os.system("mkdir %s/next0" % wd )
-            # Copy some results in that directory
-            os.system( "mv %s.%d.out %s/next0" % (prefix0,t, wd) )
-            os.system( "mv *.wfc* %s/next0" % wd )
-            os.system( "mv x0.export %s/next0" % wd )
-
-            if nac_method>=1:
-                os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix1,t,prefix1,t) )
-                os.system( "%s -n %s %s < x1.exp.in > x1.exp.out" % (BATCH_SYSTEM,NP,EXE_EXPORT) )
-
-                os.system("mkdir %s/next1" % wd )
-                os.system( "mv %s.%d.out %s/next1" % (prefix1,t, wd) )
-                os.system( "mv *.wfc* %s/next1" % wd )
-                os.system( "mv x1.export %s/next1" % wd )
-
-            #sys.exit(0)  # for test purpuses
-
-        else:
-            pass
 
 
         # Now general part - from current and next wavefunctions calculate NACs:
         if curr_index>=start_indx:
             print "Generate NAC from WFCs at two adjacent points"
-            # Read the N-electron wavefunction descriptions
-            if nac_method>=0:
-                # Convert binary files to xml - this is needed in newest version of QE
-                # becuase pw_export will produce binary files in any case (bug?)
-                os.system("%s convert %s/curr0/x0.export/wfc.1 %s/curr0/x0.export/wfc.1.xml" % (EXE_CONVERT,wd,wd))
-                os.system("%s convert %s/next0/x0.export/wfc.1 %s/next0/x0.export/wfc.1.xml" % (EXE_CONVERT,wd,wd))
 
-                curr_tmp0.QE_read_acsii_index("%s/curr0/x0.export/index.xml" % wd)
-                curr_tmp0.QE_read_acsii_wfc("%s/curr0/x0.export/wfc.1.xml" % wd )
+            # Convert binary files to xml - this is needed in newest version of QE
+            # becuase pw_export will produce binary files in any case (bug?)
+            os.system("%s convert %s/curr0/x0.export/wfc.1 %s/curr0/x0.export/wfc.1.xml" % (EXE_CONVERT,wd,wd))
+            os.system("%s convert %s/next0/x0.export/wfc.1 %s/next0/x0.export/wfc.1.xml" % (EXE_CONVERT,wd,wd))
 
-                next_tmp0.QE_read_acsii_index("%s/next0/x0.export/index.xml" % wd)
-                next_tmp0.QE_read_acsii_wfc("%s/next0/x0.export/wfc.1.xml" % wd )
+            ngw, nbnd, nspin, gamma_only = QE_methods.read_qe_wfc_info("%s/curr0/x0.export/wfc.1" % wd , "Kpoint.1")
+           
+            act_space = act_sp1
+            if nspin==4: 
+                act_space = act_sp2
 
-                os.system("-rf %s/curr0/x0.export/wfc.1.xml" % wd)
-                os.system("-rf %s/next0/x0.export/wfc.1.xml" % wd)
+            wfc_curr = QE_methods.read_qe_wfc("%s/curr0/x0.export/wfc.1" % wd , "Kpoint.1", act_space)
+            wfc_next = QE_methods.read_qe_wfc("%s/next0/x0.export/wfc.1" % wd , "Kpoint.1", act_space)
 
-
-                curr_wfc0 = wfc(curr_tmp0,minband,nocc,curr_tmp0,nocc+1,maxband)
-                next_wfc0 = wfc(next_tmp0,minband,nocc,next_tmp0,nocc+1,maxband)
-                print "nac_method>=0: 2 WFCs are read and trimmed"
+            e_curr = QE_methods.read_qe_index("%s/curr0/x0.export/index.xml" % wd, act_space )
+            e_next = QE_methods.read_qe_index("%s/next0/x0.export/index.xml" % wd, act_space )
 
 
-
-            if nac_method>=1:
-                # In addition read info for N+1 electron wavefnctions
-
-                # Convert binary files to xml - this is needed in newest version of QE
-                # becuase pw_export will produce binary files in any case (bug?)
-                os.system("%s convert %s/curr1/x1.export/wfc.1 %s/curr1/x1.export/wfc.1.xml" % (EXE_CONVERT,wd,wd))
-                os.system("%s convert %s/next1/x1.export/wfc.1 %s/next1/x1.export/wfc.1.xml" % (EXE_CONVERT,wd,wd))
-
-                curr_tmp1.QE_read_acsii_index("%s/curr1/x1.export/index.xml" % wd)
-                curr_tmp1.QE_read_acsii_wfc("%s/curr1/x1.export/wfc.1" % wd )
-
-                next_tmp1.QE_read_acsii_index("%s/next1/x1.export/index.xml" % wd)
-                next_tmp1.QE_read_acsii_wfc("%s/next1/x1.export/wfc.1" % wd )
-
-                os.system("-rf %s/curr1/x1.export/wfc.1.xml" % wd)
-                os.system("-rf %s/next1/x1.export/wfc.1.xml" % wd)
-
-
-                # Combine wavefunctions
-                # Careful - we take the second wavefunction not from nocc+1 but from nocc+2
-                # that is we simply skip the orbital nocc+1 from the second (charged) wavefunction
-                # this is because in charged system this is a HOMO, while we need LUMO
-                curr_wfc1 = wfc(curr_tmp0,minband,nocc,curr_tmp1,nocc+2,maxband)
-                next_wfc1 = wfc(next_tmp0,minband,nocc,next_tmp1,nocc+2,maxband)
-                print "nac_method>=1: 2 WFCs are read and trimmed"
-
+            os.system("-rf %s/curr0/x0.export/wfc.1.xml" % wd)
+            os.system("-rf %s/next0/x0.export/wfc.1.xml" % wd)
 
 
             #-----------------------------------------------------------------
-            if nac_method>=0:              
-                # Options for wfc preprocessing
-                if wfc_preprocess=="normalize": # just normalize
-                    curr_wfc0.normalize()
-                    next_wfc0.normalize()
+            # Finally compute Hamiltonian and the overlap matrix
+            # In this case - any reasonable value for nocc leads to the same results
+            # Keep in mind, the curr_wfc0 - is already only a subset of the whole wfc that has been 
+            # computed, so all bands - from 0 to maxband - minband will be active!
 
-                elif wfc_preprocess=="complete": # complete wfc with complex conjugate part, 
-                                                 # the result is then normalized
-                    curr_wfc0.complete()
-                    next_wfc0.complete()
+            S, H = None, None
 
-                elif wfc_preprocess=="restore":  # restore real wfc from the projection, the result is normailzed
-                                                 # optionally the wfc can be completed with complex conjugate
-                                                 # before restoring                    
-                    curr_wfc0.restore(0,do_complete) # first 0 - k-point, second 1 - do complete wfc
-                    next_wfc0.restore(0,do_complete)
+            if nspin==1 or nspin==2:
 
-                print "nac_method>=0: WFCs are preconditioned"
+                ovlp  = wfc_curr.H() * wfc_next
+                H = 0.5*(e_curr + e_next) - (0.5j/dt)*(ovlp - ovlp.T())
+                S = 0.5 *(wfc_curr.H() * wfc_curr + wfc_next.H() * wfc_next) # for debug
 
-                # Finally compute Hamiltonian and the overlap matrix
-                # In this case - any reasonable value for nocc leads to the same results
-                # Keep in mind, the curr_wfc0 - is already only a subset of the whole wfc that has been 
-                # computed, so all bands - from 0 to maxband - minband will be active!
-                ham(curr_wfc0,next_wfc0,0,0, 0,maxband-minband, dt,"%s/0_Ham_%d" % (rd, curr_index) )
-                print "nac_method>=0: Hamiltonian is computed and printed"
+
+            elif nspin==4:
+
+                S = wfc_curr.H() * wfc_curr
+                St  = wfc_curr.H() * wfc_next  # overlap of wfc at different times
+
+                sx = S.num_of_cols
+                ovlp = CMATRIX(sx/2, sx/2)
+                nac = CMATRIX(sx/2, sx/2)
+                ec = CMATRIX(sx/2, sx/2)
+                en = CMATRIX(sx/2, sx/2)
+
+                for n in xrange(sx/2):
+                    for k in xrange(sx/2):
+                        ovlp.set(n,k, S.get(2*n,2*k) + S.get(2*n+1,2*k+1) )
+                        nac.set(n,k, St.get(2*n,2*k).real + St.get(2*n+1,2*k+1).real, 0.0 )
+                    ec.set(n,n, 0.5*(e_curr.get(2*n, 2*n)+e_curr.get(2*n+1, 2*n+1)) )
+                    en.set(n,n, 0.5*(e_next.get(2*n, 2*n)+e_next.get(2*n+1, 2*n+1)) )
+
+                H = 0.5*(ec + en) - (0.5j/dt)*(nac - nac.T())
+                S = ovlp
+
  
-                if compute_Hprime==1:
-                    os.system("%s convert %s/curr0/x0.export/grid.1 %s/curr0/x0.export/grid.1.xml" % (EXE_CONVERT,wd,wd))
-                    curr_wfc0.QE_read_acsii_grid("%s/curr0/x0.export/grid.1.xml" % wd)
-                    curr_wfc0.compute_Hprime(0,maxband-minband,"%s/0_Hprime_%d" % (rd, curr_index) )
-                    os.system("-rf %s/curr0/x0.export/grid.1.xml" % wd)
+            H.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )
+            H.imag().show_matrix("%s/0_Ham_%d_im" % (rd, curr_index) )    
+            S.real().show_matrix("%s/0_S_%d_re" % (rd, curr_index) )
+            S.imag().show_matrix("%s/0_S_%d_im" % (rd, curr_index) )
+
+            
+#            ovlp.real().show_matrix("%s/0_ovlp_%d_re" % (rd, curr_index) )
+#            ovlp.imag().show_matrix("%s/0_ovlp_%d_im" % (rd, curr_index) )
 
 
-            if nac_method>=1:
-                # Options for wfc preprocessing
-                if wfc_preprocess=="normalize": # just normalize
-                    curr_wfc1.normalize()
-                    next_wfc1.normalize()
 
-                elif wfc_preprocess=="complete": # complete wfc with complex conjugate part,
-                                                 # the result is then normalized
-                    curr_wfc1.complete()
-                    next_wfc1.complete()
-
-                elif wfc_preprocess=="restore":  # restore real wfc from the projection, the result is normailzed
-                                                 # optionally the wfc can be completed with complex conjugate
-                                                 # before restoring
-                    curr_wfc1.restore(0,do_complete) # first 0 - k-point, second 1 - do complete wfc
-                    next_wfc1.restore(0,do_complete)
-
-                print "nac_method>=1: WFCs are preconditioned"
-
-
-                # Finally compute Hamiltonian and the overlap matrix
-                # WORKS ONLY IN CASE: curr_wfc0.nspin==2 and curr_wfc1.nspin==2:
-                # other cases yet to be implemented
-                # here we use maxband-1 because 1 orbitals is skipped
-
-                ham(curr_wfc1,next_wfc1,0,0, 0,maxband-1-minband, dt,"%s/1_Ham_%d" % (rd, curr_index) )
-                print "nac_method>=1: Hamiltonian is computed and printed"
-
-
-                if compute_Hprime==1:
-                    os.system("%s convert %s/curr1/x0.export/grid.1 %s/curr1/x0.export/grid.1.xml" % (EXE_CONVERT,wd,wd))
-                    curr_wfc1.QE_read_acsii_grid("%s/curr1/x1.export/grid.1" % wd)
-                    curr_wfc1.compute_Hprime(0,maxband-1-minband,"%s/1_Hprime_%d" % (rd, curr_index) )
-                    os.system("-rf %s/curr1/x1.export/grid.1.xml" % wd)
-
+  
+            if compute_Hprime==1:
+#                os.system("%s convert %s/curr0/x0.export/grid.1 %s/curr0/x0.export/grid.1.xml" % (EXE_CONVERT,wd,wd))
+#                curr_wfc0.QE_read_acsii_grid("%s/curr0/x0.export/grid.1.xml" % wd)
+#                curr_wfc0.compute_Hprime(0,maxband-minband,"%s/0_Hprime_%d" % (rd, curr_index) )
+                os.system("-rf %s/curr0/x0.export/grid.1.xml" % wd)
 
 
             #-----------------------------------------------------------------
@@ -305,9 +237,6 @@ def runMD(params):
             # Remove current run, make next run to be the current one
             os.system("rm -rf %s/curr0" % wd )
             os.system("mv %s/next0 %s/curr0" % (wd, wd) )
-            if nac_method==1:
-                os.system("rm -rf %s/curr1" % wd )
-                os.system("mv %s/next1 %s/curr1" % (wd, wd) )
 
             print "old files deleted, new have become old"
 

@@ -198,6 +198,18 @@ def runMD(params):
 
                 sx = S.num_of_cols
                 ovlp = CMATRIX(sx/2, sx/2)
+        ##### Pauli matrices ###
+        #
+        #        | 0  1 |         | 0  -i |         | 1   0 |
+        #  sig1 =|      |  sig2 = |       |  sig3 = |       | 
+        #        | 1  0 |         | i   0 |         | 0  -1 |
+        #
+        ######
+ 
+                sig1 = CMATRIX(sx/2, sx/2)
+                sig2 = CMATRIX(sx/2, sx/2)
+                sig3 = CMATRIX(sx/2, sx/2)
+
                 nac = CMATRIX(sx/2, sx/2)
                 ec = CMATRIX(sx/2, sx/2)
                 en = CMATRIX(sx/2, sx/2)
@@ -205,12 +217,25 @@ def runMD(params):
                 for n in xrange(sx/2):
                     for k in xrange(sx/2):
                         ovlp.set(n,k, S.get(2*n,2*k) + S.get(2*n+1,2*k+1) )
+                        sig1.set(n,k, S.get(2*n,2*k+1) + S.get(2*n+1,2*k) )
+                        sig2.set(n,k, (-S.get(2*n,2*k+1) + S.get(2*n+1,2*k))*(1.0j+0.0) )
+                        sig3.set(n,k, S.get(2*n,2*k) - S.get(2*n+1,2*k+1) )
+
                         nac.set(n,k, St.get(2*n,2*k).real + St.get(2*n+1,2*k+1).real, 0.0 )
                     ec.set(n,n, 0.5*(e_curr.get(2*n, 2*n)+e_curr.get(2*n+1, 2*n+1)) )
                     en.set(n,n, 0.5*(e_next.get(2*n, 2*n)+e_next.get(2*n+1, 2*n+1)) )
 
                 H = 0.5*(ec + en) - (0.5j/dt)*(nac - nac.T())
                 S = ovlp
+
+                sig1.real().show_matrix("%s/0_sig1_%d_re" % (rd, curr_index) )
+                sig1.imag().show_matrix("%s/0_sig1_%d_im" % (rd, curr_index) )
+                sig2.real().show_matrix("%s/0_sig2_%d_re" % (rd, curr_index) )
+                sig2.imag().show_matrix("%s/0_sig2_%d_im" % (rd, curr_index) )
+                sig3.real().show_matrix("%s/0_sig3_%d_re" % (rd, curr_index) )
+                sig3.imag().show_matrix("%s/0_sig3_%d_im" % (rd, curr_index) )
+
+
 
  
             H.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )

@@ -171,9 +171,13 @@ def ham_map(prefix,isnap,fsnap,suffix,opt,scl,outfile):
 
     filename = prefix + str(isnap) + suffix
     f = open(filename,"r")
-    a = f.readline()
+
+    sz = 0
+    while sz==0:
+        a = f.readline()
+        sz = len(a.split())
+
     f.close()
-    sz = len(a.split())
     print "Map size is %d by %d" % (sz,sz)
 
     #========= Prepare storage ============
@@ -201,21 +205,25 @@ def ham_map(prefix,isnap,fsnap,suffix,opt,scl,outfile):
             A = f.readlines()
             f.close()
 
-            i = 0 
-            while i<sz:
-                tmp = A[i].split()
-                j = 0
-                while j<sz:
-                    x = float(tmp[j])
-                    if opt==0:
-                        M[i][j] = M[i][j] + x
-                    elif opt==1:
-                        M[i][j] = M[i][j] + math.fabs(x)
-                    elif opt==2:
-                        M[i][j] = M[i][j] + x*x
+            i,p = 0, 0
+            while p<len(A):
+                tmp = A[p].split()
 
-                    j = j + 1
-                i = i + 1
+                if(len(tmp)==sz): # skip empty lines
+                    j = 0
+                    while j<sz:
+                        x = float(tmp[j])
+                        if opt==0:
+                            M[i][j] = M[i][j] + x
+                        elif opt==1:
+                            M[i][j] = M[i][j] + math.fabs(x)
+                        elif opt==2:
+                            M[i][j] = M[i][j] + x*x
+
+                        j = j + 1
+                    i = i + 1
+
+                p = p + 1
 
             count = count + 1.0
 
@@ -259,9 +267,13 @@ def ham_map1(energy_prefix,energy_suffix,prefix,isnap,fsnap,suffix,opt,scl1,scl2
 
     filename = prefix + str(isnap) + suffix
     f = open(filename,"r")
-    a = f.readline()
+
+    sz = 0
+    while sz==0:
+        a = f.readline()
+        sz = len(a.split())
+
     f.close()
-    sz = len(a.split())
     print "Map size is %d by %d" % (sz,sz)
 
     #========= Prepare storage ============
@@ -297,25 +309,32 @@ def ham_map1(energy_prefix,energy_suffix,prefix,isnap,fsnap,suffix,opt,scl1,scl2
             f1.close()
 
 
-            i = 0 
-            while i<sz:
-                tmp = A[i].split()
-                tmp1 = A1[i].split()        
-                y = float(tmp1[i])
-                j = 0
-                while j<sz:
-                    x = float(tmp[j])
-                    if opt==0:
-                        M[i][j] = M[i][j] + x
-                    elif opt==1:
-                        M[i][j] = M[i][j] + math.fabs(x)
-                    elif opt==2:
-                        M[i][j] = M[i][j] + x*x
+            i, p = 0 , 0
 
-                    j = j + 1
-                E[i] = E[i] + y
-#                print i,y
-                i = i + 1
+            while p<len(A):
+                tmp = A[p].split()
+
+                if len(tmp)==sz:
+
+                    tmp1 = A1[p].split()
+                    y = float(tmp1[i])
+
+                    j = 0
+                    while j<sz:
+                        x = float(tmp[j])
+                        if opt==0:
+                            M[i][j] = M[i][j] + x
+                        elif opt==1:
+                            M[i][j] = M[i][j] + math.fabs(x)
+                        elif opt==2:
+                            M[i][j] = M[i][j] + x*x
+ 
+                        j = j + 1
+                    E[i] = E[i] + y
+
+                    i = i + 1
+
+                p = p + 1
 
             count = count + 1.0
 

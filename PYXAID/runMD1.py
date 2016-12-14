@@ -187,7 +187,7 @@ def runMD(params):
             if nspin==1 or nspin==2:
 
                 ovlp  = wfc_curr.H() * wfc_next
-                H = 0.5*(e_curr + e_next) - (0.5j/dt)*(ovlp - ovlp.T())
+                H = 0.5*(e_curr + e_next) - (0.5j/dt)*(ovlp - ovlp.H())
                 S = 0.5 *(wfc_curr.H() * wfc_curr + wfc_next.H() * wfc_next) # for debug
 
 
@@ -225,7 +225,7 @@ def runMD(params):
                     ec.set(n,n, 0.5*(e_curr.get(2*n, 2*n)+e_curr.get(2*n+1, 2*n+1)) )
                     en.set(n,n, 0.5*(e_next.get(2*n, 2*n)+e_next.get(2*n+1, 2*n+1)) )
 
-                H = 0.5*(ec + en) - (0.5j/dt)*(nac - nac.T())
+                H = 0.5*(ec + en) - (0.5j/dt)*(nac - nac.H())
                 S = ovlp
 
                 sig1.real().show_matrix("%s/0_sig1_%d_re" % (rd, curr_index) )

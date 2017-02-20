@@ -79,7 +79,9 @@ def compute_overlap(info, act_space):
 
             print ik1, ik2;  s.show_matrix()
         
-print "The overall overlap matrix: "; S.show_matrix()
+    print "The overall overlap matrix: "; S.show_matrix()
+
+    return S
 
 
 def runMD(params):
@@ -234,16 +236,16 @@ def runMD(params):
 
             S, H = None, None
 
-            if nspin==1 or nspin==2:
+            if info["nspin"]==1 or info["nspin"]==2:
 
-                if info["nk"]==1: # Only one k-point
+                if info["nk"]== info["nspin"]: # Only one k-point
                     ovlp  = coeff_curr[0].H() * coeff_next[0]
                     H = 0.5*(e_curr[0] + e_next[0]) - (0.5j/dt)*(ovlp - ovlp.H())
                     S = 0.5 *(coeff_curr[0].H() * coeff_curr[0] + coeff_next[0].H() * coeff_next[0]) # for debug
 
                 else:
 
-                    as_sz = len(active_space)
+                    as_sz = len(act_space)
                     H = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
 
                     for ik1 in xrange(info["nk"]):
@@ -284,7 +286,7 @@ def runMD(params):
 #                    sys.exit(0)
 
 
-            elif nspin==4:
+            elif info["nspin"]==4:
 
                 if info["nk"]==1: # Only one k-point
 

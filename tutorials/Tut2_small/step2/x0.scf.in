@@ -1,6 +1,6 @@
 &CONTROL
   calculation = 'scf',
-  pseudo_dir = '/projects/academic/alexeyak/alexeyak/pyxaid-code/tutorials/Tut2_small/step1/',
+  pseudo_dir = '/user/alexeyak/Programming/pyxaid-code/tutorials/Tut2_small/step2/',
   outdir = './',
   prefix = 'x0',
   disk_io = 'low',
@@ -39,8 +39,8 @@
 
 
 ATOMIC_SPECIES
- C  12.01  C.pbe-hgh.UPF
- H  1.008  H.pbe-hgh.UPF
+ C  12.01  C.pbe-rrkjus.UPF
+ H  1.008  H.pbe-rrkjus.UPF
 
 
 K_POINTS gamma                  

@@ -36,7 +36,8 @@ NP=4
 exe_qespresso=/util/academic/espresso/espresso-5.2.1/bin/pw.x
 exe_export=/util/academic/espresso/espresso-5.2.1/bin/pw_export.x
 exe_convert=/util/academic/espresso/espresso-5.2.1/bin/iotk
-res=/projects/academic/alexeyak/alexeyak/pyxaid-code/tutorials/Tut2_small/step2/res
+res=/user/alexeyak/Programming/pyxaid-code/tutorials/Tut2_small/step2/res
+
 
 # These will be assigned automatically, leave them as they are
 param1=
@@ -45,6 +46,8 @@ param2=
 
 # This is invocation of the scripts which will further handle NA-MD calclculations
 # on the NAC calculation step
+# NOTE: minband - starting from 1
+#       maxband - is included
 python -c "from PYXAID import *
 params = { }
 params[\"NP\"]=$NP
@@ -56,13 +59,9 @@ params[\"stop_indx\"]=$param2
 params[\"wd\"]=\"wd_test\"
 params[\"rd\"]=\"$res\"
 params[\"minband\"]=4
-params[\"nocc\"]=6
 params[\"maxband\"]=10
 params[\"nac_method\"]=0
-params[\"wfc_preprocess\"]=\"complete\"
-params[\"do_complete\"]=1
 params[\"prefix0\"]=\"x0.scf\"
-params[\"prefix1\"]=\"x1.scf\"
 params[\"compute_Hprime\"]=0
 print params
 runMD1.runMD(params)

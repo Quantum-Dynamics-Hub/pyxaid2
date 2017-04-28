@@ -1,8 +1,8 @@
 from PYXAID import *
 import os
 
-nsteps_per_job = 10
-tot_nsteps = 50
+nsteps_per_job = 5
+tot_nsteps = 5
 
 # Step 1 - split MD trajectory on the time steps
 # Provide files listed below: "x.md.out" and "x.scf.in"

@@ -1,9 +1,9 @@
 &inputpp
   prefix = 'x0',
   outdir = './',
-  pseudo_dir = '/projects/academic/alexeyak/alexeyak/pyxaid-code/tutorials/Tut2_small/step1/',
-  psfile(1) = 'C.pbe-hgh.UPF',
-  psfile(2) = 'H.pbe-hgh.UPF',
+  pseudo_dir = '/user/alexeyak/Programming/pyxaid-code/tutorials/Tut2_small/step2/',
+  psfile(1) = 'C.pbe-rrkjus.UPF',
+  psfile(2) = 'H.pbe-rrkjus.UPF',
   single_file = .FALSE.,
   ascii = .TRUE.,
   uspp_spsi = .FALSE.,

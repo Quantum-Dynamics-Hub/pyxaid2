@@ -7,5 +7,5 @@
 # * http://www.gnu.org/copyleft/gpl.txt
 #***********************************************************/
 
-__all__ = ["pyxaid_core","out2inp","out2xyz","out2pdb","diff","spectrum","pdos","distribute","runMD","average","excitation_spectrum","lazy","td_map","filesys","proj_dos", "xdatcar2inp"]
+__all__ = ["pyxaid_core","out2inp","out2xyz","out2pdb","diff","spectrum","pdos","distribute","runMD","average","excitation_spectrum","lazy","td_map","filesys","proj_dos", "xdatcar2inp","runMD2"]
 

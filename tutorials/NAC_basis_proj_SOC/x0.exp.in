@@ -1,0 +1,11 @@
+&inputpp
+  prefix = 'x0',
+  outdir = './',
+  pseudo_dir = '/home/eric/PROJECT/Alexey2/pure/step2/PP',
+  psfile(1) = 'In.rel-pbe-dn-rrkjus_psl.0.2.2.UPF',
+  psfile(2) = 'Ga.rel-pbe-dn-rrkjus_psl.0.2.UPF',
+  psfile(3) = 'As.rel-pbe-n-rrkjus_psl.0.2.UPF',
+  single_file = .FALSE.,
+  ascii = .TRUE.,
+  uspp_spsi = .FALSE.,
+/

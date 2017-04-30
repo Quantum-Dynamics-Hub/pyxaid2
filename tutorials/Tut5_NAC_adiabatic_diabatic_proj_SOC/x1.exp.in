@@ -1,0 +1,11 @@
+&inputpp
+  prefix = 'x1',
+  outdir = './',
+  pseudo_dir = '/home/eric/PROJECT/Alexey2/SOC/PP',
+  psfile(1) = 'In.pbe-dn-rrkjus_psl.0.2.2.UPF',
+  psfile(2) = 'Ga.pbe-dn-rrkjus_psl.0.2.UPF',
+  psfile(3) = 'As.pbe-n-rrkjus_psl.0.2.UPF',
+  single_file = .FALSE.,
+  ascii = .TRUE.,
+  uspp_spsi = .FALSE.,
+/

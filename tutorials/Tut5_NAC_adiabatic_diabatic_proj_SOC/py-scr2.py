@@ -1,6 +1,9 @@
 from PYXAID2 import *
 import os
 
+user = 1 #weili or eric
+#user = 2 #alexey
+
 nsteps_per_job = 3
 tot_nsteps = 6
 
@@ -22,12 +25,19 @@ out2inp.out2inp("x.md.out","x1.scf.in","wd","x1.scf",0,tot_nsteps,1)  # charged 
 # submit_templ.pbs - template for submit files - manually edit the variables
 # x.exp.in - file for export of the wavefunction
 
-os.system("cp submit_templ.pbs wd")
+if user==1: 
+   os.system("cp submit_templ.pbs wd")
+elif user==2:
+   os.system("cp submit_templ.slm wd")
+
 os.system("cp x0.exp.in wd")
 os.system("cp x1.exp.in wd")
 os.chdir("wd")
-#distribute.distribute(0,tot_nsteps,nsteps_per_job,"submit_templ.pbs",["x0.exp.in"],["x0.scf"],1)
-distribute.distribute(0,tot_nsteps,nsteps_per_job,"submit_templ.pbs",["x0.exp.in","x1.exp.in"],["x0.scf","x1.scf"],1)
+
+if user==1:
+   distribute.distribute(0,tot_nsteps,nsteps_per_job,"submit_templ.pbs",["x0.exp.in","x1.exp.in"],["x0.scf","x1.scf"],1)
+elif user==2:
+   distribute.distribute(0,tot_nsteps,nsteps_per_job,"submit_templ.slm",["x0.exp.in","x1.exp.in"],["x0.scf","x1.scf"],2)
 
 
 

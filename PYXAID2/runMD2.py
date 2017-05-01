@@ -138,7 +138,7 @@ def runMD(params):
         print "you are doing a spin polarized calculation for NAC"
     elif nac_method == 3:
         print "you are doing adiabatic/diabatic projrction with SOC for NAC, \
-              it will perform the SOC and non spin polarized calculation \
+              it will perform the SOC and spin polarized calculation \
               at the same time"
     else:
         print "Error: nac_method must be one of the values in [0,1,2,3]"

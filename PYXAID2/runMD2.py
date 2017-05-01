@@ -1,5 +1,5 @@
 #***********************************************************
-# * Copyright (C) 2013-2015 Alexey V. Akimov
+# * Copyright (C) 2017 Alexey V. Akimov
 # * This file is distributed under the terms of the
 # * GNU General Public License as published by the
 # * Free Software Foundation; either version 3 of the
@@ -17,9 +17,6 @@ if sys.platform=="cygwin":
 elif sys.platform=="linux" or sys.platform=="linux2":
     from liblibra_core import *
 from libra_py import *
-
-
-
 
 
 
@@ -182,7 +179,6 @@ def runMD(params):
         # Run calculations
         # A regular calculation anyway, no mattter whether it includes the SOC effect
         if nac_method == 0 or nac_method == 1 or nac_method == 3:
-            print "runninf calculation" ################
             os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix0,t,prefix0,t) )
             os.system( "%s -n %s %s < x0.exp.in > x0.exp.out" % (BATCH_SYSTEM,NP,EXE_EXPORT) )
 

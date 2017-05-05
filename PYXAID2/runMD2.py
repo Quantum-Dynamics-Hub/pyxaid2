@@ -1,5 +1,5 @@
 #***********************************************************
-# * Copyright (C) 2017 Alexey V. Akimov
+# * Copyright (C) 2017 Wei Li and Alexey V. Akimov
 # * This file is distributed under the terms of the
 # * GNU General Public License as published by the
 # * Free Software Foundation; either version 3 of the
@@ -17,7 +17,6 @@ if sys.platform=="cygwin":
 elif sys.platform=="linux" or sys.platform=="linux2":
     from liblibra_core import *
 from libra_py import *
-
 
 
 
@@ -81,6 +80,66 @@ def compute_overlap(info, act_space):
     return S
 
 
+
+def compute_el_ham(act_sp1,act_sp2,coeff_curr1,coeff_next1,coeff_curr,coeff_next,e_curr,e_next):
+# \param[in] act_sp1 - the active space list for no-soc calculation
+# \param[in] act_sp2 - the active space list for soc calculation
+# \param[in] coeff_curr1 - the current spin diabatic state for alp/bet, NPW*N matrix
+# \param[in] coeff_next1 - the next spin diabatic state for alp/bet, NPW*N matrix
+# \param[in] coeff_curr - the current spin adiabatic state which mix alp and bet, NPW*M matrix
+# \param[in] coeff_next - the next spin adiabatic state which mix alp and bet, NPW*M matrix
+# \param[in] e_curr - the current adiabatic state energy, a M*M matrix
+# \param[in] e_next - the next adiabatic state energy, a M*M matrix
+
+    # project the spin-adiabatic basis onto spin-diabatic basis
+    # |i> => <a|i>    |i> => <b|i>
+    # i is the spin adiabatic basis which mixes the alp(a) and bet(b) spin from SOC calc,NPW*M matrix; 
+    # alp (a) or bet (b) is the spin diabatic basis from spin-polarized calc, NPW*N matrix
+    # NPW-the number of plane wave, N-the number of diabatic state, M-the number of adiabatic state
+    # Then we will get a N*M matrix for <a|i> and <b|i>
+    # electronic Ham in the form Hab = <a|i> Ei <i|b>, 
+    # sum over all adiabatic state, M
+    # Ei is the spin adiabatic state energy
+    # finally we get a N*N matrix for the electronic Ham
+
+    alp_proj_curr = coeff_curr1[0].H() * coeff_curr[0]
+    bet_proj_curr = coeff_curr1[1].H()*coeff_curr[0]
+
+    alp_proj_next = coeff_next1[0].H() * coeff_next[0]
+    bet_proj_next = coeff_next1[1].H()*coeff_next[0]
+
+    N = len(act_sp1)
+    M = len(act_sp2)
+
+    h_cc = CMATRIX(2*N, 2*N)
+    h_nn = CMATRIX(2*N, 2*N)
+
+    for n1 in range(0,N):
+        for n2 in range(0,N):
+
+            tmp_aa_cc,tmp_ab_cc,tmp_bb_cc = 0.0,0.0,0.0
+            tmp_aa_nn,tmp_ab_nn,tmp_bb_nn = 0.0,0.0,0.0
+
+            for m in range(0,M):
+                tmp_aa_cc += alp_proj_curr.get(n1,m)*alp_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
+                tmp_ab_cc += alp_proj_curr.get(n1,m)*bet_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
+                tmp_bb_cc += bet_proj_curr.get(n1,m)*bet_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
+
+                tmp_aa_nn += alp_proj_next.get(n1,m)*alp_proj_next.H().get(m,n2)*e_next[0].get(m, m)
+                tmp_ab_nn += alp_proj_next.get(n1,m)*bet_proj_next.H().get(m,n2)*e_next[0].get(m, m)
+                tmp_bb_nn += bet_proj_next.get(n1,m)*bet_proj_next.H().get(m,n2)*e_next[0].get(m, m)
+
+            h_cc.set(n1,n2,tmp_aa_cc)
+            h_cc.set(n1+N,n2+N,tmp_bb_cc)
+            h_cc.set(n1+N,n2,tmp_ab_cc)
+
+            h_nn.set(n1,n2,tmp_aa_nn)
+            h_nn.set(n1+N,n2+N,tmp_bb_nn)
+            h_nn.set(n1+N,n2,tmp_ab_nn)
+
+    return h_cc,h_nn
+
+
 def runMD(params):
 #------------ Read the parameters -----------------
 # Parameters meaning
@@ -106,13 +165,12 @@ def runMD(params):
     rd = get_value(params,"rd",wd,"s")
     minband = get_value(params,"minband",1,"i")
     maxband = get_value(params,"maxband",2,"i")
-#    nocc = get_value(params,"nocc",1,"i")
+    minband_soc = get_value(params,"minband_soc",1,"i")
+    maxband_soc = get_value(params,"maxband_soc",2,"i")
     nac_method = get_value(params,"nac_method",0,"i")  # choose what method for NAC calculations to use: 0 -standard, 1-corrected
     prefix0 = get_value(params,"prefix0","x0.scf","s")
     prefix1 = get_value(params,"prefix1","x1.scf","s")
 
-#    wfc_preprocess = get_value(params,"wfc_preprocess","restore","s") # variants are: normalize, complete, restore
-#    do_complete = get_value(params,"do_complete",1,"i") # argument for option "restore"
     
     compute_Hprime = get_value(params,"compute_Hprime",0,"i") # transition dipole moments
 
@@ -148,7 +206,7 @@ def runMD(params):
     act_sp1 = range(minband, maxband+1)     # min = 1, max = 2 => range(1,3) = [1,2]
 
     # Use this for nspin = 4
-    act_sp2 = range(2*minband-1, 2*(maxband+1)-1 ) # min =1, max = 2 => range(1,5) = [1,2,3,4]
+    act_sp2 = range(2*minband_soc-1, 2*(maxband_soc+1)-1 ) # min =1, max = 2 => range(1,5) = [1,2,3,4]
 
     # Initialize variables
     curr_index = start_indx - 1
@@ -318,7 +376,7 @@ def runMD(params):
 
             ######################################### NAC calculation #######################################
             # Finally compute Hamiltonian and the overlap matrix
-            S, H, S_dia, H_dia, S_aa, S_bb, S_ab, H_aa, H_ab, H_bb = None, None, None, None, None, None,None, None, None, None
+            S, H, S_dia, H_dia, H_vib_aa, H_vib_ab, H_vib_bb = None, None, None, None, None, None,None
 
             # non spin-polarized case
             if nac_method == 0 or nac_method == 1 or nac_method == 3:
@@ -330,7 +388,7 @@ def runMD(params):
                         S = 0.5 *(coeff_curr[0].H() * coeff_curr[0] + coeff_next[0].H() * coeff_next[0]) # for debug
 
                     else: 
-                        print "you are deal with many kpoint"
+                        print "you are dealing with multiple kpoints"
 
                         as_sz = len(act_sp1)
                         H = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
@@ -427,14 +485,11 @@ def runMD(params):
                     H_dia = 0.5*(e_curr1[0] + e_next1[0]) - (0.5j/dt)*(ovlp - ovlp.H())
                     S_dia = 0.5 *(coeff_curr1[0].H() * coeff_curr1[0] + coeff_next1[0].H() * coeff_next1[0])
 
-                    print 'begin the projection of adiabatic/diabatic basis'
-
                     # check whether the adiabatic and diabatic basis have the same number of plane waves
                     # the reason why I used the read_qe_wfc_info is because I will need the ngw 
-                    # for constructing the matrix store the diabatic wavefunction. 
+                    # to check the consistency 
                     # But the read_qe_index does not read it, so in order to avoid the changes in the Libra code, 
                     # I use the read_qe_wfc_info.
-
                     info_wfc = QE_methods.read_qe_wfc_info("%s/curr0/x0.export/wfc.1" % wd,0)
                     info_wfc1 = QE_methods.read_qe_wfc_info("%s/curr1/x1.export/wfc.1" % wd,0)
 
@@ -443,89 +498,53 @@ def runMD(params):
                         print "Error: the number of plane waves between diabatic and adiabatic does not equal"
                         sys.exit(0)
                 
-                    # project the spin-adiabatic basis onto spin-diabatic basis
-                    # |i> => <a|i>    |i> => <b|i>
-                    # i is the spin adiabatic basis which mixes the alp(a) and bet(b) spin from SOC calc,NPW*M matrix; 
-                    # alp (a) or bet (b) is the spin diabatic basis from spin-polarized calc, NPW*N matrix
-                    # NPW-the number of plane wave, N-the number of diabatic state, M-the number of adiabatic state
-                    # Then we will get a N*M matrix for <a|i> and <b|i>
-                    # coeff_curr1[0] - the current spin diabatic state for alp, NPW*N matrix
-                    # coeff_curr1[1] - the current spin diabatic state for bet, NPW*N matrix
-                    # coeff_next1[0] - the next spin diabatic state for alp, NPW*N matrix
-                    # coeff_next1[1] - the next spin diabatic state for bet, NPW*N matrix
-                    # coeff_curr[0] - the current spin adiabatic state which mix alp and bet, NPW*M matrix
-                    # e_curr[0] - the current adiabatic state energy, a M*M matrix
-                    # e_curr[1] - the next adiabatic state energy, a M*M matrix
-
-                    alpha_proj_curr = coeff_curr1[0].H() * coeff_curr[0]
-                    beta_proj_curr = coeff_curr1[1].H()*coeff_curr[0]
-
-                    alpha_proj_next = coeff_next1[0].H() * coeff_next[0]
-                    beta_proj_next = coeff_next1[1].H()*coeff_next[0]
-
-
-                    # electronic Ham in the form Hab = <a|i> Ei <i|b>, 
-                    # sum over all adiabatic state, M
-                    # Ei is the spin adiabatic state energy
-                    # finally we get a N*N matrix for the electronic Ham
-
+                    # compute the electronic Ham using the spin adibatic/diabatic basis projection
+                    h_cc, h_nn= compute_el_ham(act_sp1,act_sp2,coeff_curr1,coeff_next1,coeff_curr,coeff_next,e_curr,e_next)
+                    
                     N = len(act_sp1)
-                    M = len(act_sp2)
 
-                    h_aa_cc = CMATRIX(N, N)
-                    h_ab_cc = CMATRIX(N, N)
-                    h_bb_cc = CMATRIX(N, N)
+                    H_aa_cc = CMATRIX(N, N)
+                    H_ab_cc = CMATRIX(N, N)
+                    H_bb_cc = CMATRIX(N, N)
 
-                    h_aa_nn = CMATRIX(N, N)
-                    h_ab_nn = CMATRIX(N, N)
-                    h_bb_nn = CMATRIX(N, N)
+                    H_aa_nn = CMATRIX(N, N)
+                    H_ab_nn = CMATRIX(N, N)
+                    H_bb_nn = CMATRIX(N, N)                  
 
-                    for n1 in range(0,N):
-                        for n2 in range(0,N):
+                    for n1 in xrange(N):
+                        for n2 in xrange(N):
+                            H_aa_cc.set(n1,n2,h_cc.get(n1,n2))
+                            H_bb_cc.set(n1,n2,h_cc.get(n1+N,n2+N))
+                            H_ab_cc.set(n1,n2,h_cc.get(n1+N,n2))
 
-                            tmp_aa_cc,tmp_ab_cc,tmp_bb_cc = 0.0,0.0,0.0
-                            tmp_aa_nn,tmp_ab_nn,tmp_bb_nn = 0.0,0.0,0.0
-                            for m in range(0,M):
-                                tmp_aa_cc += alpha_proj_curr.get(n1,m)*alpha_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
-                                tmp_ab_cc += alpha_proj_curr.get(n1,m)*beta_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
-                                tmp_bb_cc += beta_proj_curr.get(n1,m)*beta_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
-
-                                tmp_aa_nn += alpha_proj_next.get(n1,m)*alpha_proj_next.H().get(m,n2)*e_next[0].get(m, m)
-                                tmp_ab_nn += alpha_proj_next.get(n1,m)*beta_proj_next.H().get(m,n2)*e_next[0].get(m, m)
-                                tmp_bb_nn += beta_proj_next.get(n1,m)*beta_proj_next.H().get(m,n2)*e_next[0].get(m, m)
-
-                            h_aa_cc.set(n1,n2,tmp_aa_cc)
-                            h_ab_cc.set(n1,n2,tmp_ab_cc)
-                            h_bb_cc.set(n1,n2,tmp_bb_cc)
-
-                            h_aa_nn.set(n1,n2,tmp_aa_nn)
-                            h_ab_nn.set(n1,n2,tmp_ab_nn)
-                            h_bb_nn.set(n1,n2,tmp_bb_nn)                         
+                            H_aa_nn.set(n1,n2,h_nn.get(n1,n2))
+                            H_bb_nn.set(n1,n2,h_nn.get(n1+N,n2+N))
+                            H_ab_nn.set(n1,n2,h_nn.get(n1+N,n2))                            
 
                     # overlap of spin-diabatic states at different times
                     # <a_curr|a_next>, <a_curr|b_next>, <b_curr|b_next>
                     #     St_aa              St_ab          St_bb
+                    # The <alp|bet> = 0, as suggested by Alexey, 
+                    # so there is no NAC term for H_vib_ab
                     St_aa = coeff_curr1[0].H() * coeff_next1[0]   
-                    St_ab = coeff_curr1[0].H() * coeff_next1[1]
                     St_bb = coeff_curr1[1].H() * coeff_next1[1]
-
 
                     # invoke the standard form of H_vib_ab
                     # H_vib_ab = H_ab - i*hbar*d_ab
-                    H_aa = 0.5*(h_aa_cc + h_aa_nn) - (0.5j/dt)*(St_aa - St_aa.H())
-                    H_ab = 0.5*(h_ab_cc + h_ab_nn) - (0.5j/dt)*(St_ab - St_ab.H())
-                    H_bb = 0.5*(h_bb_cc + h_bb_nn) - (0.5j/dt)*(St_bb - St_bb.H())
+                    H_vib_aa = 0.5*(H_aa_cc + H_aa_nn) - (0.5j/dt)*(St_aa - St_aa.H())
+                    H_vib_ab = 0.5*(H_ab_cc + H_ab_nn) 
+                    H_vib_bb = 0.5*(H_bb_cc + H_bb_nn) - (0.5j/dt)*(St_bb - St_bb.H())
  
                     # H_aa = h_aa_cc - (0.5j/dt)*(St_aa - St_aa.H())
                     # H_ab = h_ab_cc - (0.5j/dt)*(St_ab - St_ab.H())
                     # H_bb = h_bb_cc - (0.5j/dt)*(St_bb - St_bb.H())
 
-                    H_aa.real().show_matrix("%s/0_Ham_aa_%d_re" % (rd, curr_index) )
-                    H_aa.imag().show_matrix("%s/0_Ham_aa_%d_im" % (rd, curr_index) ) 
-                    H_ab.real().show_matrix("%s/0_Ham_ab_%d_re" % (rd, curr_index) )
-                    H_ab.imag().show_matrix("%s/0_Ham_ab_%d_im" % (rd, curr_index) ) 
-                    H_bb.real().show_matrix("%s/0_Ham_bb_%d_re" % (rd, curr_index) )
-                    H_bb.imag().show_matrix("%s/0_Ham_bb_%d_im" % (rd, curr_index) )    
+                    H_vib_aa.real().show_matrix("%s/0_Ham_aa_%d_re" % (rd, curr_index) )
+                    H_vib_aa.imag().show_matrix("%s/0_Ham_aa_%d_im" % (rd, curr_index) ) 
+                    H_vib_ab.real().show_matrix("%s/0_Ham_ab_%d_re" % (rd, curr_index) )
+                    H_vib_ab.imag().show_matrix("%s/0_Ham_ab_%d_im" % (rd, curr_index) ) 
+                    H_vib_bb.real().show_matrix("%s/0_Ham_bb_%d_re" % (rd, curr_index) )
+                    H_vib_bb.imag().show_matrix("%s/0_Ham_bb_%d_im" % (rd, curr_index) )    
 
 
                     H_dia.real().show_matrix("%s/0_Ham_dia_%d_re" % (rd, curr_index) )

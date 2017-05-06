@@ -81,63 +81,287 @@ def compute_overlap(info, act_space):
 
 
 
-def compute_el_ham(act_sp1,act_sp2,coeff_curr1,coeff_next1,coeff_curr,coeff_next,e_curr,e_next):
-# \param[in] act_sp1 - the active space list for no-soc calculation
-# \param[in] act_sp2 - the active space list for soc calculation
-# \param[in] coeff_curr1 - the current spin diabatic state for alp/bet, NPW*N matrix
-# \param[in] coeff_next1 - the next spin diabatic state for alp/bet, NPW*N matrix
-# \param[in] coeff_curr - the current spin adiabatic state which mix alp and bet, NPW*M matrix
-# \param[in] coeff_next - the next spin adiabatic state which mix alp and bet, NPW*M matrix
-# \param[in] e_curr - the current adiabatic state energy, a M*M matrix
-# \param[in] e_next - the next adiabatic state energy, a M*M matrix
 
-    # project the spin-adiabatic basis onto spin-diabatic basis
-    # |i> => <a|i>    |i> => <b|i>
-    # i is the spin adiabatic basis which mixes the alp(a) and bet(b) spin from SOC calc,NPW*M matrix; 
-    # alp (a) or bet (b) is the spin diabatic basis from spin-polarized calc, NPW*N matrix
-    # NPW-the number of plane wave, N-the number of diabatic state, M-the number of adiabatic state
-    # Then we will get a N*M matrix for <a|i> and <b|i>
-    # electronic Ham in the form Hab = <a|i> Ei <i|b>, 
-    # sum over all adiabatic state, M
-    # Ei is the spin adiabatic state energy
-    # finally we get a N*N matrix for the electronic Ham
 
-    alp_proj_curr = coeff_curr1[0].H() * coeff_curr[0]
-    bet_proj_curr = coeff_curr1[1].H()*coeff_curr[0]
+def merge_orbitals(Ca, Cb):
+    """
+    This function puts two matrices together into a single matrix
+    """
 
-    alp_proj_next = coeff_next1[0].H() * coeff_next[0]
-    bet_proj_next = coeff_next1[1].H()*coeff_next[0]
+    npw_a = Ca.num_of_rows
+    N_mo_a = Ca.num_of_cols
+ 
+    npw_b = Cb.num_of_rows
+    N_mo_b = Cb.num_of_cols
 
-    N = len(act_sp1)
-    M = len(act_sp2)
+    if npw_a != npw_b:
+        print "Error: The number of rows of the two matrices should be equal"
+        sys.exit(0)
 
-    h_cc = CMATRIX(2*N, 2*N)
-    h_nn = CMATRIX(2*N, 2*N)
+    C = CMATRIX(npw_a, N_mo_a + N_mo_b)
 
-    for n1 in range(0,N):
-        for n2 in range(0,N):
+    push_submatrix(C, Ca, range(0,npw_a), range(0,N_mo_a));
+    push_submatrix(C, Cb, range(0,npw_a), range(N_mo_a, N_mo_a + N_mo_b));
 
-            tmp_aa_cc,tmp_ab_cc,tmp_bb_cc = 0.0,0.0,0.0
-            tmp_aa_nn,tmp_ab_nn,tmp_bb_nn = 0.0,0.0,0.0
+    return C
 
-            for m in range(0,M):
-                tmp_aa_cc += alp_proj_curr.get(n1,m)*alp_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
-                tmp_ab_cc += alp_proj_curr.get(n1,m)*bet_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
-                tmp_bb_cc += bet_proj_curr.get(n1,m)*bet_proj_curr.H().get(m,n2)*e_curr[0].get(m, m)
 
-                tmp_aa_nn += alp_proj_next.get(n1,m)*alp_proj_next.H().get(m,n2)*e_next[0].get(m, m)
-                tmp_ab_nn += alp_proj_next.get(n1,m)*bet_proj_next.H().get(m,n2)*e_next[0].get(m, m)
-                tmp_bb_nn += bet_proj_next.get(n1,m)*bet_proj_next.H().get(m,n2)*e_next[0].get(m, m)
+def split_orbitals_energies(C, E):
+    """ In SOC, non-collinear case, the orbitals are 2-component spinors:
+             | psi_i^alp |          | E_i_alp          |
+     psi_i = |           |,  so E = |                  |
+             | psi_i^bet |          |          E_i_bet |
+  
+    So, the wfc we read from the QE calculations, in this case is composed of such
+    pairs, going in this order, so:
 
-            h_cc.set(n1,n2,tmp_aa_cc)
-            h_cc.set(n1+N,n2+N,tmp_bb_cc)
-            h_cc.set(n1+N,n2,tmp_ab_cc)
+    psi_i^alp, psi_i^bet, psi_{i+1}^alp, psi_{i+1}^bet, ...
 
-            h_nn.set(n1,n2,tmp_aa_nn)
-            h_nn.set(n1+N,n2+N,tmp_bb_nn)
-            h_nn.set(n1+N,n2,tmp_ab_nn)
+    Thus, there are 2*N_mo_adi columns, so we need to extract spin-components 
+    into 2 matrices
 
-    return h_cc,h_nn
+    """
+
+    N_pw = C.num_of_rows
+    N_mo_adi = C.num_of_cols/2   # C.num_of_cols has to be even
+
+    C_alp = CMATRIX(N_pw, N_mo_adi)
+    C_bet = CMATRIX(N_pw, N_mo_adi)
+    E_alp = CMATRIX(N_mo_adi, N_mo_adi)
+    E_bet = CMATRIX(N_mo_adi, N_mo_adi)
+
+
+    stenc1, stenc2 = [], []
+
+    for i in xrange(N_mo_adi):
+        stenc1.append(2*i)
+        stenc2.append(2*i+1)
+
+    pop_submatrix(C, C_alp, range(0, N_pw), stenc1 )
+    pop_submatrix(C, C_bet, range(0, N_pw), stenc2 )
+
+    pop_submatrix(E, E_alp, stenc1, stenc1)
+    pop_submatrix(E, E_bet, stenc2, stenc2)
+
+    return C_alp, C_bet, E_alp, E_bet
+
+    
+
+
+def orthogonalize_orbitals(C):
+    """
+    C = N_pw x N_mo   (just alpha or beta orbitals)
+    flag == 2:   C = N_pw x 2*N_mo (both alpha and beta orbitals)
+
+    This function takes an input of orbitals (C), which may not
+    be rigorously orthogonal, finds a suitable transformation (U)
+    and converts them into rigorously orthogonal orbitals (C_tilda)
+
+    C_tilda = C * U, so if you want
+
+    C_tilda^+  * C_tilda = I, you'll find that
+
+    U = S^{-1/2}, where S = C^+ * C
+
+    """
+
+    S = C.H() * C  # overlap matrix
+
+    S_half = CMATRIX(S.num_of_rows, S.num_of_cols)
+    S_i_half = CMATRIX(S.num_of_rows, S.num_of_cols)
+
+    sqrt_matrix(S, S_half, S_i_half)
+
+    C_tilda = C * S_i_half
+
+    return C_tilda
+
+
+def orthogonalize_orbitals2(Ca,Cb):
+    """
+    Ca and Cb = N_pw x N_mo   - represent the spin-components
+    of the adiabatic states
+
+    This function takes an input of orbitals (C), which may not
+    be rigorously orthogonal, finds a suitable transformation (U)
+    and converts them into rigorously orthogonal orbitals (C_tilda)
+
+    For each channel:
+
+    C_tilda = C * U, so if you want
+
+    C_tilda^+  * C_tilda = I, you'll find that
+
+    U = S^{-1/2}, where S = Ca^+ * Ca + Cb^+ * Cb
+
+    """
+
+    S = Ca.H() * Ca + Cb.H() * Cb  # overlap matrix
+
+    S_half = CMATRIX(S.num_of_rows, S.num_of_cols)
+    S_i_half = CMATRIX(S.num_of_rows, S.num_of_cols)
+
+    sqrt_matrix(S, S_half, S_i_half)
+
+    Ca_tilda = Ca * S_i_half
+    Cb_tilda = Cb * S_i_half
+
+    return Ca_tilda, Cb_tilda
+
+
+
+def compute_H_el(C_dia_a, C_dia_b, C_adi_a, C_adi_b, E_adi_a, E_adi_b):
+    """
+    C_dia_ - spin-diabatic wavefunctions. CMATRIX(N_pw, N_mo_dia)
+    C_adi_ - spin-adiabatic wavefunctions (with SOC). CMATRIX(N_pw, N_mo_adi)
+    E_adi_ - spin-adiabatic energies (with SOC). CMATRIX(N_mo_adi, N_mo_adi)
+
+    _a - alph,  _b - beta
+
+    Here, N_pw, N_mo_dia, N_mo_adi are the numbers of planewaves (basis),
+    diabatic and adiabatic states, respectively.
+
+    The diabatic orbitals are obtained from spin-polarized calculations, but without 
+    SOC
+    The spin-adiabatic orbitals are obtained from non-collinear calculations (with 
+    SOC) that also mix alpha and beta components. 
+
+    To compute the matrix elements of electronic Hamiltonian in spin-diabatic 
+    basis, We use the following formula:
+
+    ^
+    H  =  sum  {  |i> E_i <i| }
+           i
+
+    here |i> is spin-orbital  |i> = |i_a> * |a> + |i_b> * |b>
+
+
+    <x|H|y> = sum { <x|i> * E_i * <i|y>  }
+               i
+
+    where i runs over all spin-adiabatic states. 
+    
+    Because |i> mixes the components, the couplings will be non-zero
+
+    Also, E_adi_a and E_adi_b are the same, so below we'll be using only one
+
+    """
+
+    E_adi = E_adi_a
+
+# Matrix of projection of spin-adiabatic states onto spin-diabatic
+# (N_mo_dia x N_mo_adi) = (N_mo_dia x N_pw) x (N_pw x N_mo_adi)
+    Sai = C_dia_a.H() * C_adi_a  #  <a|i>
+    Sbi = C_dia_b.H() * C_adi_b  #  <b|i>
+
+# Now compute the Hamiltonian
+# (N_mo_dia x N_mo_dia) = (N_mo_dia x N_mo_adi) x (N_mo_adi x N_mo_adi) x (N_mo_adi x N_mo_dia)
+#  
+    H_aa = Sai * E_adi * Sai.H()
+    H_bb = Sbi * E_adi * Sbi.H()
+    H_ab = Sai * E_adi * Sbi.H()
+
+
+    return H_aa, H_ab, H_bb
+
+
+
+def compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, E_adi_curr, E_adi_next, params):
+    """ 
+    The first set of coefficients corresponds to the diabatic orbitals:
+    coeff_curr and coeff_next - [0] - alpha, [1] - beta
+    The second - to adiabatic, energies are also adiabatic [0] - includes both
+    spin channels, but the number of orbitals is doubled
+    """
+
+    do_orth = params["do_orth"]   # whether to correct orbitals to make them orthogonal
+    rd = params["root_directory"] # of where the files will be printed out
+    curr_index = params["curr_index"] # a counter for the files
+    print_overlaps = params["print_overlaps"] # whether we need overlaps (debug)
+    dt = params["dt"]
+
+
+    #========== Orthogonalize orbitals =========================
+    # spin-adiabatic orbitals
+    c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = None, None, None, None
+    c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = None, None, None, None
+
+    if do_orth:
+        a, b, e_adi_curr_a, e_adi_curr_b = split_orbitals_energies(coeff_curr[0], E_adi_curr[0])
+        c_adi_curr_a, c_adi_curr_b = orthogonalize_orbitals2(a, b)
+
+        a, b, e_adi_next_a, e_adi_next_b = split_orbitals_energies(coeff_next[0], E_adi_next[0])
+        c_adi_next_a, c_adi_next_b = orthogonalize_orbitals2(a, b)
+    else:
+        # Here, we copy matrices by references, but that is okay
+        # since we don't modify the final matrix
+        c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = split_orbitals(coeff_curr[0])
+        c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = split_orbitals(coeff_next[0])
+
+
+
+    # spin-diabatic orbitals
+    c_dia_curr_a, c_dia_curr_b = None, None
+    if do_orth:
+        c_dia_curr_a = orthogonalize_orbitals(coeff_curr1[0])
+        c_dia_curr_b = orthogonalize_orbitals(coeff_curr1[1]) 
+    else:
+        c_dia_curr_a = coeff_curr1[0]
+        c_dia_curr_b = coeff_curr1[1]
+
+    c_dia_next_a, c_dia_next_b = None, None
+    if do_orth:
+        c_dia_next_a = orthogonalize_orbitals(coeff_next1[0])
+        c_dia_next_b = orthogonalize_orbitals(coeff_next1[1])
+    else:
+        c_dia_next_a = coeff_next1[0]
+        c_dia_next_b = coeff_next1[1]
+
+
+
+    #========== Compute the electronic Ham ==============
+    H_aa_curr, H_ab_curr, H_bb_curr = compute_H_el(c_dia_curr_a, c_dia_curr_b, c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b)
+    H_aa_next, H_ab_next, H_bb_next = compute_H_el(c_dia_next_a, c_dia_next_b, c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b)
+
+
+    # overlap of spin-diabatic states at different times
+    # <a_curr|a_next>, <a_curr|b_next>, <b_curr|b_next>
+    #     St_aa              St_ab          St_bb
+    # The <alp|bet> = 0, because these are spin-diabatic states
+    St_aa = c_dia_curr_a.H() * c_dia_next_a
+    St_bb = c_dia_curr_b.H() * c_dia_next_b
+
+    # Hvib = H_el - i*hbar*d_ab
+    Hvib_aa = 0.5*(H_aa_curr + H_aa_next) - (0.5j/dt)*(St_aa - St_aa.H())
+    Hvib_ab = 0.5*(H_ab_curr + H_ab_next)
+    Hvib_bb = 0.5*(H_bb_curr + H_bb_next) - (0.5j/dt)*(St_bb - St_bb.H())
+
+    # Print out the results
+    Hvib_aa.real().show_matrix("%s/Hvib_aa_%d_re" % (rd, curr_index) )
+    Hvib_aa.imag().show_matrix("%s/Hvib_aa_%d_im" % (rd, curr_index) )
+    Hvib_ab.real().show_matrix("%s/Hvib_ab_%d_re" % (rd, curr_index) )
+    Hvib_ab.imag().show_matrix("%s/Hvib_ab_%d_im" % (rd, curr_index) )
+    Hvib_bb.real().show_matrix("%s/Hvib_bb_%d_re" % (rd, curr_index) )
+    Hvib_bb.imag().show_matrix("%s/Hvib_bb_%d_im" % (rd, curr_index) )
+
+    # For the debug (and quality control) - print out the overlaps
+    if print_overlaps:
+        ovlp = c_adi_curr_a.H() * c_adi_curr_a + c_adi_curr_b.H() * c_adi_curr_b
+        ovlp_aa = c_dia_curr_a.H() * c_dia_curr_a
+        ovlp_bb = c_dia_curr_b.H() * c_dia_curr_b
+ 
+        ovlp.real().show_matrix("%s/S_adi_%d_re" % (rd, curr_index) )
+        ovlp.imag().show_matrix("%s/S_adi_%d_im" % (rd, curr_index) )
+
+        ovlp_aa.real().show_matrix("%s/S_dia_alp_%d_re" % (rd, curr_index) )
+        ovlp_aa.imag().show_matrix("%s/S_dia_alp_%d_im" % (rd, curr_index) )
+
+        ovlp_bb.real().show_matrix("%s/S_dia_bet_%d_re" % (rd, curr_index) )
+        ovlp_bb.imag().show_matrix("%s/S_dia_bet_%d_im" % (rd, curr_index) )
+
+
+
+
 
 
 def runMD(params):
@@ -376,7 +600,7 @@ def runMD(params):
 
             ######################################### NAC calculation #######################################
             # Finally compute Hamiltonian and the overlap matrix
-            S, H, S_dia, H_dia, H_vib_aa, H_vib_ab, H_vib_bb = None, None, None, None, None, None,None
+            S, H, S_dia, H_dia = None, None, None, None
 
             # non spin-polarized case
             if nac_method == 0 or nac_method == 1 or nac_method == 3:
@@ -429,6 +653,7 @@ def runMD(params):
 
                         S = coeff_curr[0].H() * coeff_curr[0]
                         St = coeff_curr[0].H() * coeff_next[0]  # overlap of wfc at different times
+
 
                         sx = S.num_of_cols
                         ovlp = CMATRIX(sx/2, sx/2)
@@ -494,63 +719,13 @@ def runMD(params):
                     info_wfc1 = QE_methods.read_qe_wfc_info("%s/curr1/x1.export/wfc.1" % wd,0)
 
                     if info_wfc["ngw"] != info_wfc1["ngw"]:
-
                         print "Error: the number of plane waves between diabatic and adiabatic does not equal"
                         sys.exit(0)
-                
-                    # compute the electronic Ham using the spin adibatic/diabatic basis projection
-                    h_cc, h_nn= compute_el_ham(act_sp1,act_sp2,coeff_curr1,coeff_next1,coeff_curr,coeff_next,e_curr,e_next)
-                    
-                    N = len(act_sp1)
-
-                    H_aa_cc = CMATRIX(N, N)
-                    H_ab_cc = CMATRIX(N, N)
-                    H_bb_cc = CMATRIX(N, N)
-
-                    H_aa_nn = CMATRIX(N, N)
-                    H_ab_nn = CMATRIX(N, N)
-                    H_bb_nn = CMATRIX(N, N)                  
-
-                    for n1 in xrange(N):
-                        for n2 in xrange(N):
-                            H_aa_cc.set(n1,n2,h_cc.get(n1,n2))
-                            H_bb_cc.set(n1,n2,h_cc.get(n1+N,n2+N))
-                            H_ab_cc.set(n1,n2,h_cc.get(n1+N,n2))
-
-                            H_aa_nn.set(n1,n2,h_nn.get(n1,n2))
-                            H_bb_nn.set(n1,n2,h_nn.get(n1+N,n2+N))
-                            H_ab_nn.set(n1,n2,h_nn.get(n1+N,n2))                            
-
-                    # overlap of spin-diabatic states at different times
-                    # <a_curr|a_next>, <a_curr|b_next>, <b_curr|b_next>
-                    #     St_aa              St_ab          St_bb
-                    # The <alp|bet> = 0, as suggested by Alexey, 
-                    # so there is no NAC term for H_vib_ab
-                    St_aa = coeff_curr1[0].H() * coeff_next1[0]   
-                    St_bb = coeff_curr1[1].H() * coeff_next1[1]
-
-                    # invoke the standard form of H_vib_ab
-                    # H_vib_ab = H_ab - i*hbar*d_ab
-                    H_vib_aa = 0.5*(H_aa_cc + H_aa_nn) - (0.5j/dt)*(St_aa - St_aa.H())
-                    H_vib_ab = 0.5*(H_ab_cc + H_ab_nn) 
-                    H_vib_bb = 0.5*(H_bb_cc + H_bb_nn) - (0.5j/dt)*(St_bb - St_bb.H())
- 
-                    # H_aa = h_aa_cc - (0.5j/dt)*(St_aa - St_aa.H())
-                    # H_ab = h_ab_cc - (0.5j/dt)*(St_ab - St_ab.H())
-                    # H_bb = h_bb_cc - (0.5j/dt)*(St_bb - St_bb.H())
-
-                    H_vib_aa.real().show_matrix("%s/0_Ham_aa_%d_re" % (rd, curr_index) )
-                    H_vib_aa.imag().show_matrix("%s/0_Ham_aa_%d_im" % (rd, curr_index) ) 
-                    H_vib_ab.real().show_matrix("%s/0_Ham_ab_%d_re" % (rd, curr_index) )
-                    H_vib_ab.imag().show_matrix("%s/0_Ham_ab_%d_im" % (rd, curr_index) ) 
-                    H_vib_bb.real().show_matrix("%s/0_Ham_bb_%d_re" % (rd, curr_index) )
-                    H_vib_bb.imag().show_matrix("%s/0_Ham_bb_%d_im" % (rd, curr_index) )    
 
 
-                    H_dia.real().show_matrix("%s/0_Ham_dia_%d_re" % (rd, curr_index) )
-                    H_dia.imag().show_matrix("%s/0_Ham_dia_%d_im" % (rd, curr_index) )    
-                    S_dia.real().show_matrix("%s/0_S_dia_%d_re" % (rd, curr_index) )
-                    S_dia.imag().show_matrix("%s/0_S_dia_%d_im" % (rd, curr_index) )
+                    prms = {"do_orth": 1, "root_directory" : rd, "curr_index" : curr_index, "print_overlaps" : 1, "dt": dt}
+                    compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, e_curr, e_next, prms)
+
 
                 else:
 

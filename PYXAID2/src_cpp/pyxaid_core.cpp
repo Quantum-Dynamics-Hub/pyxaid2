@@ -12,7 +12,7 @@
 #include <iomanip>
 #include "wfc_export.h"
 #include "namd_export.h"
-#include "matrix.h"
+//#include "matrix.h"
 using namespace std;
 using namespace boost::python;
 

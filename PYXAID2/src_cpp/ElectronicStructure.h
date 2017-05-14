@@ -10,7 +10,7 @@
 #ifndef ElectronicStructure_H
 #define ElectronicStructure_H
 
-#include "matrix.h"
+//#include "matrix.h"
 #include "state.h"
 #include "units_pyxaid.h"
 #include "InputStructure.h"
@@ -20,13 +20,13 @@ using namespace std;
 
 #include "liblibra_core.h"
 using namespace liblibra::librandom;
-
+using namespace liblibra::liblinalg;
 
 
 class ElectronicStructure{
 
   // For DISH
-  void update_decoherence_times(matrix& rates);
+  void update_decoherence_times(CMATRIX& rates);
   void project_out(int i);
   void decohere(int i); 
 
@@ -43,20 +43,20 @@ public:
   int curr_state;                 // current adiabatic state
 
   // Wavefunction
-  matrix* Ccurr;
-  matrix* Cprev;
-  matrix* Cnext;
-  matrix* A;                      // density matrix - populations and coherences
+  CMATRIX* Ccurr;
+  CMATRIX* Cprev;
+  CMATRIX* Cnext;
+  CMATRIX* A;                      // density matrix - populations and coherences
 
   // Hamiltonian: meaning of "current" and "next" depends on the algorithm to solve TD-SE
-  matrix* Hcurr; // current Hamiltonian                             Hij = H[i*num_states+j]
-  matrix* Hprev; // Hamiltonian on previous nuclear time step                 ---
-  matrix* Hnext; // Hamiltonian on next nuclear time step                     ---
-  matrix* dHdt;  // slope of Hamiltonian - for interpolation scheme           ---
+  CMATRIX* Hcurr; // current Hamiltonian                             Hij = H[i*num_states+j]
+  CMATRIX* Hprev; // Hamiltonian on previous nuclear time step                 ---
+  CMATRIX* Hnext; // Hamiltonian on next nuclear time step                     ---
+  CMATRIX* dHdt;  // slope of Hamiltonian - for interpolation scheme           ---
 
-  matrix* Hprimex;
-  matrix* Hprimey;
-  matrix* Hprimez;
+  CMATRIX* Hprimex;
+  CMATRIX* Hprimey;
+  CMATRIX* Hprimez;
 
   vector<double> g; // num_states x num_states matrix, reshaped in 1D array
 
@@ -73,22 +73,22 @@ public:
 
     complex<double> tmp(0.0,0.0);
     vector<double> tmp1(n,0.0);
-    Ccurr = new matrix(n,1); *Ccurr = tmp;
-    Cprev = new matrix(n,1); *Cprev = tmp;
-    Cnext = new matrix(n,1); *Cnext = tmp;
+    Ccurr = new CMATRIX(n,1); *Ccurr = tmp;
+    Cprev = new CMATRIX(n,1); *Cprev = tmp;
+    Cnext = new CMATRIX(n,1); *Cnext = tmp;
 
     g = std::vector<double>(n*n,0.0);  // g[i*n+j] ~=g[i][j] - probability of i->j transition
 
-    A = new matrix(n,n); *A = tmp;
+    A = new CMATRIX(n,n); *A = tmp;
 
-    Hcurr = new matrix(n,n); *Hcurr = tmp;
-    Hprev = new matrix(n,n); *Hprev = tmp;
-    Hnext = new matrix(n,n); *Hnext = tmp;
-    dHdt  = new matrix(n,n); *dHdt  = tmp;
+    Hcurr = new CMATRIX(n,n); *Hcurr = tmp;
+    Hprev = new CMATRIX(n,n); *Hprev = tmp;
+    Hnext = new CMATRIX(n,n); *Hnext = tmp;
+    dHdt  = new CMATRIX(n,n); *dHdt  = tmp;
 
-    Hprimex = new matrix(n,n); *Hprimex = tmp;
-    Hprimey = new matrix(n,n); *Hprimey = tmp;
-    Hprimez = new matrix(n,n); *Hprimez = tmp;
+    Hprimex = new CMATRIX(n,n); *Hprimex = tmp;
+    Hprimey = new CMATRIX(n,n); *Hprimey = tmp;
+    Hprimez = new CMATRIX(n,n); *Hprimez = tmp;
 
 
     tau_m = std::vector<double>(n,0.0);
@@ -102,22 +102,22 @@ public:
 
     complex<double> tmp(0.0,0.0);
     vector<double> tmp1(n,0.0);
-    Ccurr = new matrix(n,1);
-    Cprev = new matrix(n,1);
-    Cnext = new matrix(n,1);
+    Ccurr = new CMATRIX(n,1);
+    Cprev = new CMATRIX(n,1);
+    Cnext = new CMATRIX(n,1);
 
     g = std::vector<double>(n*n,0.0);  // g[i*n+j] ~=g[i][j] - probability of i->j transition
     
-    A = new matrix(n,n);
+    A = new CMATRIX(n,n);
 
-    Hcurr = new matrix(n,n);
-    Hprev = new matrix(n,n);
-    Hnext = new matrix(n,n);
-    dHdt  = new matrix(n,n); 
+    Hcurr = new CMATRIX(n,n);
+    Hprev = new CMATRIX(n,n);
+    Hnext = new CMATRIX(n,n);
+    dHdt  = new CMATRIX(n,n); 
 
-    Hprimex = new matrix(n,n);
-    Hprimey = new matrix(n,n);
-    Hprimez = new matrix(n,n);
+    Hprimex = new CMATRIX(n,n);
+    Hprimey = new CMATRIX(n,n);
+    Hprimez = new CMATRIX(n,n);
 
 
     tau_m = es.tau_m;
@@ -190,20 +190,20 @@ public:
   double norm(); // calculate the norm of the wavefunction
 
   void update_populations();      // update matrix A from Ccurr
-  void update_hop_prob(double dt,int is_boltz_flag,double Temp,matrix& Ef);
+  void update_hop_prob(double dt,int is_boltz_flag,double Temp, CMATRIX& Ef);
 
 
-  void update_hop_prob_fssh(double dt,int is_boltz_flag,double Temp,matrix& Ef,double Ex, matrix&);
-  void update_hop_prob_mssh(double dt,int is_boltz_flag,double Temp,matrix& Ef,double Ex, matrix&);
-  void update_hop_prob_gfsh(double dt,int is_boltz_flag,double Temp,matrix& Ef,double Ex, matrix&);
+  void update_hop_prob_fssh(double dt,int is_boltz_flag,double Temp, CMATRIX& Ef,double Ex, CMATRIX&);
+  void update_hop_prob_mssh(double dt,int is_boltz_flag,double Temp, CMATRIX& Ef,double Ex, CMATRIX&);
+  void update_hop_prob_gfsh(double dt,int is_boltz_flag,double Temp, CMATRIX& Ef,double Ex, CMATRIX&);
   void init_hop_prob1(); 
 
-  void check_decoherence(double dt,int boltz_flag,double Temp,matrix& rates, Random& rnd); // practically DISH correction
+  void check_decoherence(double dt,int boltz_flag,double Temp, CMATRIX& rates, Random& rnd); // practically DISH correction
 
-  void propagate_coefficients(double dt,matrix& Ef);  // Trotter factorization
-  void propagate_coefficients(double dt,matrix& Ef,matrix&);  // Trotter factorization with purostat
-  void propagate_coefficients1(double dt,int opt,matrix& Ef); // Finite difference
-  void propagate_coefficients2(double dt,matrix& Ef); // "Exact"
+  void propagate_coefficients(double dt, CMATRIX& Ef);  // Trotter factorization
+  void propagate_coefficients(double dt, CMATRIX& Ef, CMATRIX&);  // Trotter factorization with purostat
+  void propagate_coefficients1(double dt,int opt, CMATRIX& Ef); // Finite difference
+  void propagate_coefficients2(double dt, CMATRIX& Ef); // "Exact"
 
 };
 

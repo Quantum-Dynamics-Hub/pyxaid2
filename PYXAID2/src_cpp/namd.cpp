@@ -206,7 +206,7 @@ double decoherence_rates(vector<double>& x,double dt,std::string rt_dir,int regr
   return sqrt(b);
 }
 
-void Efield(InputStructure& is,double t,matrix& E,double& Eex){
+void Efield(InputStructure& is,double t, CMATRIX& E,double& Eex){
 // Field modulation protocol
 // is - input parameters
 // t - time in fs
@@ -313,13 +313,13 @@ void Efield(InputStructure& is,double t,matrix& E,double& Eex){
 }
 
 
-void propagate_electronic(InputStructure& is,vector<ElectronicStructure>& es,int i, matrix& rates){
+void propagate_electronic(InputStructure& is,vector<ElectronicStructure>& es,int i, CMATRIX& rates){
 
   int nel = is.nucl_dt/is.elec_dt; // Number of electronic iterations per 1 nuclear
   int sz = es.size();              // Number of nuclear iterations (ionic steps)
   double tim;                      // time
   double Eex = 0.0;                // bias due to photons
-  matrix Ef(3,1);
+  CMATRIX Ef(3,1);
   
 
   // Propagate coefficients of all adiabatic states
@@ -401,7 +401,7 @@ void propagate_electronic(InputStructure& is,vector<ElectronicStructure>& es,int
 
 }
 
-void solve_electronic(InputStructure& is,vector<ElectronicStructure>& es,matrix& rates){
+void solve_electronic(InputStructure& is,vector<ElectronicStructure>& es, CMATRIX& rates){
 
   int sz = es.size();              // Number of nuclear iterations (ionic steps)
 
@@ -455,7 +455,7 @@ void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_e
 
   int sz = me_es.size();              // Number of nuclear iterations (ionic steps)
   int N = me_es[0].num_states;
-  matrix rij(N,N);
+  CMATRIX rij(N,N);
   ofstream out((is.scratch_dir+"/decoherence_rates_icond"+int2str(icond)+".txt").c_str(),ios::out);
 
   for(int i=0;i<N;i++){
@@ -493,7 +493,7 @@ void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_s
   ofstream out;
   int sz = me_es.size();           // Number of nuclear iterations (ionic steps)
   int nst = me_es[0].num_states;   // Number of electronic states
-  matrix rates(nst,nst);
+  CMATRIX rates(nst,nst);
 
   //>>>>> Stage 1: Solve electronic problem
   //if(is.many_electron_algorithm==0){
@@ -579,7 +579,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
   vector<vector<double> > E0(nst,vector<double>(nst,0.0));// average
   vector<vector<double> > d2E_av(nst,vector<double>(nst,0.0)); // average fluctuation of i-j pair
   vector<vector<vector<double> > > d2E(sz,vector<vector<double> >(nst,vector<double>(nst,0.0)));//fluctuation
-  matrix rates(nst,nst);
+  CMATRIX rates(nst,nst);
 
   if(is.decoherence>0){
     cout<<"Reading decoherence rate matrix for this initial condition...\n";
@@ -593,7 +593,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
     in.close();
 
     file2matrix(filename,r_ij);
-    rates = matrix(r_ij,z);
+    rates = CMATRIX(r_ij,z);
 
 
     if(is.decoherence==2){ // NAC scaling

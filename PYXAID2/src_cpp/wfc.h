@@ -17,13 +17,15 @@
 #include <complex>
 #include <string>
 #include <boost/python.hpp>
-#include "matrix.h"
+//#include "matrix.h"
 #include "liblibra_core.h"
 
 using namespace boost::python;
 using namespace std;
 using namespace liblibra;
 using namespace liblibra::libutil;
+using namespace liblibra::liblinalg;
+using namespace liblibra::libmeigen;
 
 
 /*
@@ -120,7 +122,7 @@ public:
   // Methods
   void complete();
   void normalize();
-  void transform(matrix&);
+  void transform(CMATRIX&);
 };
 
 
@@ -175,7 +177,7 @@ public:
   // Common methods
   void complete();
   void normalize();
-  void transform(int k,matrix&);
+  void transform(int k,CMATRIX&);
   void restore(int k1,int do_complete);
   void set_latt_vectors(boost::python::list);
   void set_reci_vectors(boost::python::list);

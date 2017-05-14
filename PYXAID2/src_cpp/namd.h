@@ -17,10 +17,11 @@
 
 using namespace liblibra;
 using namespace liblibra::librandom;
+using namespace liblibra::liblinalg;
 
 
 void hop(vector<double>& sh_prob,int& state,int num_states);
-void solve_electronic(InputStructure& is,vector<ElectronicStructure>& es,matrix&);
+void solve_electronic(InputStructure& is,vector<ElectronicStructure>& es, CMATRIX&);
 
 void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond);
 void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states,int icond, Random& rnd);

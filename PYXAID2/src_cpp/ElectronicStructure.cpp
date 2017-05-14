@@ -35,7 +35,7 @@ double ElectronicStructure::norm(){
 }
 
 
-void ElectronicStructure::update_decoherence_times(matrix& rates){
+void ElectronicStructure::update_decoherence_times(CMATRIX& rates){
 
   update_populations();
 
@@ -68,7 +68,7 @@ void ElectronicStructure::decohere(int i){
 }
 
 
-void ElectronicStructure::check_decoherence(double dt,int boltz_flag,double Temp,matrix& rates, Random& rnd){
+void ElectronicStructure::check_decoherence(double dt,int boltz_flag,double Temp, CMATRIX& rates, Random& rnd){
 
   update_decoherence_times(rates);
 
@@ -107,7 +107,7 @@ void ElectronicStructure::check_decoherence(double dt,int boltz_flag,double Temp
 
 
 
-void ElectronicStructure::update_hop_prob(double dt,int boltz_flag, double Temp,matrix& Ef){
+void ElectronicStructure::update_hop_prob(double dt,int boltz_flag, double Temp, CMATRIX& Ef){
 /*******************************************************
  (Re-)Calculate hopping probabilities from given state 
 *******************************************************/
@@ -169,14 +169,14 @@ void ElectronicStructure::init_hop_prob1(){
   }// for i
 }
 
-void ElectronicStructure::update_hop_prob_fssh(double dt,int boltz_flag, double Temp,matrix& Ef,double Eex, matrix& rates){
+void ElectronicStructure::update_hop_prob_fssh(double dt,int boltz_flag, double Temp, CMATRIX& Ef,double Eex, CMATRIX& rates){
 /*******************************************************
  Here we actually sum up all the transition probabilities
 *******************************************************/
   update_populations();
 
   // Compute effective Hamiltonian
-  matrix* Heff; Heff = new matrix(num_states,num_states);
+  CMATRIX* Heff; Heff = new CMATRIX(num_states,num_states);
   *Heff = *Hcurr + ( Ef.M[0] * (*Hprimex) + Ef.M[1] * (*Hprimey) + Ef.M[2] * (*Hprimez));
 
 
@@ -220,13 +220,13 @@ void ElectronicStructure::update_hop_prob_fssh(double dt,int boltz_flag, double 
 
 
 
-void ElectronicStructure::update_hop_prob_mssh(double dt,int boltz_flag, double Temp,matrix& Ef,double Eex, matrix& rates){
+void ElectronicStructure::update_hop_prob_mssh(double dt,int boltz_flag, double Temp, CMATRIX& Ef,double Eex, CMATRIX& rates){
 /*******************************************************
   Here we actually sum up all the transition probabilities
 *******************************************************/
   update_populations();
 
-  matrix* Heff; Heff = new matrix(num_states,num_states);
+  CMATRIX* Heff; Heff = new CMATRIX(num_states,num_states);
   *Heff = *Hcurr + ( Ef.M[0] * (*Hprimex) + Ef.M[1] * (*Hprimey) + Ef.M[2] * (*Hprimez));
 
   for(int i=0;i<num_states;i++){
@@ -261,7 +261,7 @@ void ElectronicStructure::update_hop_prob_mssh(double dt,int boltz_flag, double 
        
 
 
-void ElectronicStructure::update_hop_prob_gfsh(double dt,int boltz_flag, double Temp,matrix& Ef,double Eex, matrix& rates){
+void ElectronicStructure::update_hop_prob_gfsh(double dt,int boltz_flag, double Temp, CMATRIX& Ef,double Eex, CMATRIX& rates){
 /*******************************************************
  Here we actually sum up all the transition probabilities
 *******************************************************/
@@ -271,14 +271,14 @@ void ElectronicStructure::update_hop_prob_gfsh(double dt,int boltz_flag, double 
   complex<double> one(0.0,1.0);
 
   // Compute effective Hamiltonian
-  matrix* Heff; Heff = new matrix(num_states,num_states);
-  matrix* C_dot; C_dot = new matrix(num_states,1);
+  CMATRIX* Heff; Heff = new CMATRIX(num_states,num_states);
+  CMATRIX* C_dot; C_dot = new CMATRIX(num_states,1);
   *Heff = *Hcurr + ( Ef.M[0] * (*Hprimex) + Ef.M[1] * (*Hprimey) + Ef.M[2] * (*Hprimez));
 
 //  exit(0);
   *C_dot = -one * (*Heff * *Ccurr);  // assume hbar = 1
 
-  matrix* A_dot; A_dot = new matrix(num_states,num_states);
+  CMATRIX* A_dot; A_dot = new CMATRIX(num_states,num_states);
   *A_dot = (*C_dot).conj() * (*Ccurr).T() + (*Ccurr).conj() * (*C_dot).T();  // this should be real matrix
 
 //  exit(0);
@@ -430,7 +430,7 @@ void ElectronicStructure::phase(complex<double> Hii,double dt,int i){
 
 }
 
-void ElectronicStructure::propagate_coefficients(double dt,matrix& Ef){
+void ElectronicStructure::propagate_coefficients(double dt, CMATRIX& Ef){
 
   int i,j;
   complex<double> Hprime;
@@ -468,7 +468,7 @@ void ElectronicStructure::propagate_coefficients(double dt,matrix& Ef){
   
 }
 
-void ElectronicStructure::propagate_coefficients(double dt,matrix& Ef,matrix& rates){
+void ElectronicStructure::propagate_coefficients(double dt, CMATRIX& Ef, CMATRIX& rates){
 
   int i,j;
   complex<double> Hprime;
@@ -516,7 +516,7 @@ void ElectronicStructure::propagate_coefficients(double dt,matrix& Ef,matrix& ra
 }
 
 
-void ElectronicStructure::propagate_coefficients1(double dt,int opt,matrix& Ef){
+void ElectronicStructure::propagate_coefficients1(double dt,int opt, CMATRIX& Ef){
 /***********************************************************************
  This is interpolation scheme
  Hcurr_interp(dt) = Hcurr + dHdt*dt
@@ -536,7 +536,7 @@ void ElectronicStructure::propagate_coefficients1(double dt,int opt,matrix& Ef){
 }
 
 
-void ElectronicStructure::propagate_coefficients2(double dt,matrix& Ef){
+void ElectronicStructure::propagate_coefficients2(double dt, CMATRIX& Ef){
 /*************************************************************
   This is basically exact solution of linear ODE system
   i*hbar*dC/dt = H * C 
@@ -546,11 +546,14 @@ void ElectronicStructure::propagate_coefficients2(double dt,matrix& Ef){
   complex<double> arg(0.0,(-dt/HBAR));
 
   // hermitian symmetrize Hcurr - just to be sure the algorithm will work better
-  matrix tmp(Hcurr->n_rows,Hcurr->n_cols);
+  CMATRIX tmp(Hcurr->n_rows,Hcurr->n_cols);
   tmp = ((*Hcurr) + (*Hcurr).H());
   tmp *= 0.5;
 
-  *Ccurr = exp(tmp,arg,tol) * (*Ccurr);
+  CMATRIX U(Hcurr->n_rows, Hcurr->n_cols);
+  exp_matrix(U, tmp, arg);
+
+  *Ccurr = U * (*Ccurr);
 }
 
 

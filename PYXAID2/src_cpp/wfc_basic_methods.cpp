@@ -175,7 +175,7 @@ void K_point::normalize(){
 }
 
 
-void K_point::transform(matrix& T){
+void K_point::transform(CMATRIX& T){
 // T - is nbands x nbands matrix which mixes original MOs to make new LC of MOs
   vector<MO> tmp_mo = mo;
   for(int i=0;i<nbands;i++){
@@ -266,7 +266,7 @@ void wfc::normalize(){
   for(int i=0;i<nkpts;i++){ kpts[i].normalize(); }
 }
 
-void wfc::transform(int k,matrix& T){
+void wfc::transform(int k,CMATRIX& T){
   kpts[k].transform(T);
 }
 
@@ -297,7 +297,7 @@ void wfc::restore(int k1,int do_complete){
   if(do_complete==1){ complete(); }
 
   // Compute overlap matrix
-  matrix S(nbands,nbands);
+  CMATRIX S(nbands,nbands);
 
   for(int i=0;i<nbands;i++){
     for(int j=0;j<nbands;j++){
@@ -310,9 +310,14 @@ void wfc::restore(int k1,int do_complete){
   // Find the transformation matrix T
   // which makes S matrix diagonal - eigenvalue problem
 
-  matrix eval(nbands,nbands);
-  matrix evec(nbands,nbands);
-  matrix eval_sqrt(nbands,nbands);
+  CMATRIX S_half(nbands, nbands);
+  CMATRIX S_i_half(nbands, nbands);
+  CMATRIX T(nbands, nbands);
+
+/*
+  CMATRIX eval(nbands,nbands);
+  CMATRIX evec(nbands,nbands);
+  CMATRIX eval_sqrt(nbands,nbands);
   //matrix evec_inv(nbands,nbands);
 
   //cout<<"entering eigen\n";
@@ -328,6 +333,10 @@ void wfc::restore(int k1,int do_complete){
 //  T = evec * eval_sqrt * evec_inv; // T = S^-1/2
   T = evec.conj() * eval_sqrt.conj() * evec.T(); // T = (S^-1/2)^*, here evec^-1 = evec.H(), so (evec^-1)^* = evec^T
 //  cout<<"T = "<<T<<endl;
+//
+*/
+  sqrt_matrix(S, S_half, S_i_half);
+  T = S_i_half.conj(); // T = (S^-1/2)^*
 
 
   // Finally, restore the real wavefunction (orthonormal)

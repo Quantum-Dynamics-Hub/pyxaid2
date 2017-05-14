@@ -8,7 +8,7 @@
 ***********************************************************/
 
 #include "wfc.h"
-#include "matrix.h"
+//#include "matrix.h"
 #include "units_pyxaid.h"
 
 // Here we define a set of functions which are not the members of wfc, but

@@ -26,8 +26,8 @@ all: pyxaid_core.so
 #random.o: random.cpp random.h
 #	${CPP} ${FLAGS} ${I} -c random.cpp
 
-matrix.o: matrix.cpp matrix.h
-	${CPP} ${FLAGS} ${I} -c matrix.cpp
+#matrix.o: matrix.cpp matrix.h
+#	${CPP} ${FLAGS} ${I} -c matrix.cpp
 
 state.o: state.cpp state.h
 	${CPP} ${FLAGS} ${I} -c state.cpp
@@ -68,9 +68,9 @@ pyxaid_core.o: pyxaid_core.cpp
 
 
 pyxaid_core.so: pyxaid_core.o wfc_export.o wfc_functions.o wfc_QE_methods.o wfc_basic_methods.o \
-        matrix.o state.o ElectronicStructure.o namd.o namd_export.o InputStructure.o io.o
+        state.o ElectronicStructure.o namd.o namd_export.o InputStructure.o io.o
 	${CPP} ${FLAGS} ${I} -shared -o pyxaid_core.so pyxaid_core.o wfc_export.o wfc_functions.o \
-        wfc_QE_methods.o wfc_basic_methods.o matrix.o state.o ElectronicStructure.o namd.o \
+        wfc_QE_methods.o wfc_basic_methods.o state.o ElectronicStructure.o namd.o \
         namd_export.o InputStructure.o io.o ${L} -lboost_python -llibra_core -lutil
 	cp pyxaid_core.so ../.
 

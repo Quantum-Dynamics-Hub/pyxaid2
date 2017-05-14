@@ -82,10 +82,10 @@ int namd(boost::python::dict inp_params){
   cout<<"Maximal Hamiltonian file to read is "<<params.Ham_re_prefix<<(max_indx+1)<<params.Ham_re_suffix<<endl;
 
   // Read all necessary couplings and transition dipole (if necessary) files - batch mode
-  vector< matrix > H_batch;
-  vector< matrix > Hprime_x_batch;
-  vector< matrix > Hprime_y_batch;
-  vector< matrix > Hprime_z_batch;
+  vector< CMATRIX > H_batch;
+  vector< CMATRIX > Hprime_x_batch;
+  vector< CMATRIX > Hprime_y_batch;
+  vector< CMATRIX > Hprime_z_batch;
 
   if(params.read_couplings=="batch" || params.read_couplings=="batch_all_in_one"){
 
@@ -131,7 +131,7 @@ int namd(boost::python::dict inp_params){
       }// if all_in_one
 
       // -------------------- Create Hamiltonian matrix ---------------------------------------------------
-      matrix Ham(Ham_re_crop,Ham_im_crop);
+      CMATRIX Ham(Ham_re_crop,Ham_im_crop);
 //      cout<<"Composed Ham = "<<Ham<<endl;
 
       //--------------------- Scale Ham to units of [Energy] = eV, [time] = fs ----------------------------
@@ -170,9 +170,9 @@ int namd(boost::python::dict inp_params){
         //------------ Create matrix --------
         // Compose matrices with complex elements from the matrices with real elements
         // In our case Hprime_ must be purely imaginary, so:
-        matrix Hprimex(tmp,Hprime_x_crop);
-        matrix Hprimey(tmp,Hprime_y_crop);
-        matrix Hprimez(tmp,Hprime_z_crop);
+        CMATRIX Hprimex(tmp,Hprime_x_crop);
+        CMATRIX Hprimey(tmp,Hprime_y_crop);
+        CMATRIX Hprimez(tmp,Hprime_z_crop);
 
         // Now scale Hprime_ elements by common scaling factor
         Hprimex *= hp_scl; Hprimey *= hp_scl; Hprimez *= hp_scl;
@@ -216,8 +216,8 @@ int namd(boost::python::dict inp_params){
       if(params.debug_flag==1){    cout<<"----------- j = "<<j<<" -------------------"<<endl;}
       int t = (j - iconds[icond][0]);  // Time
 
-      matrix* T;
-      matrix *Tx, *Ty, *Tz;
+      CMATRIX* T;
+      CMATRIX *Tx, *Ty, *Tz;
 
       if(params.read_couplings=="online" || params.read_couplings=="online_all_in_one"){
 
@@ -255,13 +255,13 @@ int namd(boost::python::dict inp_params){
 
 
         // -------------------- Create Hamiltonian matrix ---------------------------------------------------
-        matrix Ham(Ham_re_crop,Ham_im_crop);
+        CMATRIX Ham(Ham_re_crop,Ham_im_crop);
 
         //--------------------- Scale Ham to units of [Energy] = eV, [time] = fs ----------------------------
         Ham *= en_scl;
         if(params.debug_flag==2){   cout<<"Scaled Ham = "<<Ham<<endl; }
 
-        T = new matrix(Ham.n_rows,Ham.n_cols);
+        T = new CMATRIX(Ham.n_rows,Ham.n_cols);
         *T = Ham;
 
 
@@ -289,9 +289,9 @@ int namd(boost::python::dict inp_params){
 
           vector< vector<double> > tmp(Hprime_x_crop.size(),vector<double>(Hprime_x_crop.size(),0.0));
           //------------ Create matrix --------
-          matrix Hprimex(Hprime_x_crop,tmp);
-          matrix Hprimey(Hprime_y_crop,tmp);
-          matrix Hprimez(Hprime_z_crop,tmp);
+          CMATRIX Hprimex(Hprime_x_crop,tmp);
+          CMATRIX Hprimey(Hprime_y_crop,tmp);
+          CMATRIX Hprimez(Hprime_z_crop,tmp);
 
           Hprimex *= hp_scl; Hprimey *= hp_scl; Hprimez *= hp_scl;
           if(params.debug_flag==2){
@@ -300,27 +300,27 @@ int namd(boost::python::dict inp_params){
             cout<<"Scaled Hprimez = "<<Hprimez<<endl;
           }
 
-          Tx = new matrix(Hprimex.n_rows,Hprimex.n_cols);  *Tx = Hprimex;
-          Ty = new matrix(Hprimey.n_rows,Hprimey.n_cols);  *Ty = Hprimey;
-          Tz = new matrix(Hprimez.n_rows,Hprimez.n_cols);  *Tz = Hprimez;
+          Tx = new CMATRIX(Hprimex.n_rows,Hprimex.n_cols);  *Tx = Hprimex;
+          Ty = new CMATRIX(Hprimey.n_rows,Hprimey.n_cols);  *Ty = Hprimey;
+          Tz = new CMATRIX(Hprimez.n_rows,Hprimez.n_cols);  *Tz = Hprimez;
 
         }// if params.is_field==1
 
       }// "online"
       else if(params.read_couplings=="batch"){ 
-        T = new matrix(H_batch[j].n_rows,H_batch[j].n_cols);   *T = H_batch[j];
+        T = new CMATRIX(H_batch[j].n_rows,H_batch[j].n_cols);   *T = H_batch[j];
 
         if(params.is_field==1){
-          Tx = new matrix(Hprime_x_batch[j].n_rows,Hprime_x_batch[j].n_cols); *Tx = Hprime_x_batch[j];
-          Ty = new matrix(Hprime_y_batch[j].n_rows,Hprime_y_batch[j].n_cols); *Ty = Hprime_y_batch[j];
-          Tz = new matrix(Hprime_z_batch[j].n_rows,Hprime_z_batch[j].n_cols); *Tz = Hprime_z_batch[j];
+          Tx = new CMATRIX(Hprime_x_batch[j].n_rows,Hprime_x_batch[j].n_cols); *Tx = Hprime_x_batch[j];
+          Ty = new CMATRIX(Hprime_y_batch[j].n_rows,Hprime_y_batch[j].n_cols); *Ty = Hprime_y_batch[j];
+          Tz = new CMATRIX(Hprime_z_batch[j].n_rows,Hprime_z_batch[j].n_cols); *Tz = Hprime_z_batch[j];
         }// if params.is_field==1
       }// "batch"
 
-      matrix Hij(T->n_rows,T->n_cols);    Hij = *T; 
-      matrix Hij_prime_x(T->n_rows,T->n_cols); Hij_prime_x = 0.0; 
-      matrix Hij_prime_y(T->n_rows,T->n_cols); Hij_prime_y = 0.0;
-      matrix Hij_prime_z(T->n_rows,T->n_cols); Hij_prime_z = 0.0;
+      CMATRIX Hij(T->n_rows,T->n_cols);    Hij = *T; 
+      CMATRIX Hij_prime_x(T->n_rows,T->n_cols); Hij_prime_x = 0.0; 
+      CMATRIX Hij_prime_y(T->n_rows,T->n_cols); Hij_prime_y = 0.0;
+      CMATRIX Hij_prime_z(T->n_rows,T->n_cols); Hij_prime_z = 0.0;
       delete T;
 
       if(params.is_field==1){   Hij_prime_x = *Tx; Hij_prime_y = *Ty; Hij_prime_z = *Tz;  delete Tx; delete Ty; delete Tz; }

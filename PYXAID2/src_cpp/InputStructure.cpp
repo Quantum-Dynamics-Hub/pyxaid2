@@ -9,7 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include "InputStructure.h"
-#include "units.h"
+#include "units_pyxaid.h"
 
 using namespace std;
 
@@ -331,7 +331,7 @@ void InputStructure::sanity_check(){
       double omega = 0.0; // angular frequency
            if(field_freq_units=="1/fs"){ omega = 2.0*M_PI*field_freq; }     // input is linear frequency
       else if(field_freq_units=="rad/fs"){ omega = field_freq;  }           // input is angular frequency
-      else if(field_freq_units=="eV"){ omega = field_freq/hbar; }           // input is energy in eV
+      else if(field_freq_units=="eV"){ omega = field_freq/HBAR; }           // input is energy in eV
       else if(field_freq_units=="nm"){ omega = 2.0*M_PI*300.0/field_freq; } // input is wavelength in nm
       else{  cout<<"Units of the field frequency must be specified. Exiting...\n"; exit(0); }
 

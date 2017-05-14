@@ -9,7 +9,7 @@
 
 #include "wfc.h"
 #include "matrix.h"
-#include "units.h"
+#include "units_pyxaid.h"
 
 // Here we define a set of functions which are not the members of wfc, but
 // rather take wfc objects as arguments
@@ -40,7 +40,7 @@ void overlap(wfc& wfc1,int k1,int minband,int maxband,std::string filename){
 
 }
 
-void energy(wfc& wfc1,int k,int minband,int maxband,std::string filename){
+void pw_energy(wfc& wfc1,int k,int minband,int maxband,std::string filename){
 // This function prints the orbital energies (eigenvalues) in a range of band
 // indexes [minmband, maxband] for given wavefunctions
 // for given k-point into file filename
@@ -118,7 +118,7 @@ void ham(wfc& wfc1,wfc& wfc2,int k1,int k2,int minband,int maxband,double dt,std
  H_ij(t+dt/2) = Eii(t+dt/2)*delta_ij - i*hbar*d_ij(t+dt/2)
 ******************************************************************/
 
-  complex<double> ihbar(0.0,-hbar); // actually minus i*hbar
+  complex<double> ihbar(0.0,-HBAR); // actually minus i*hbar
   if(wfc1.energy_units=="Ry"||wfc1.energy_units=="Rydberg"){ 
     cout<<"Hamiltonian is in Rydberg units\n";
     ihbar /= Ry_to_eV;

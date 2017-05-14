@@ -18,9 +18,15 @@
 #include <string>
 #include <boost/python.hpp>
 #include "matrix.h"
+#include "liblibra_core.h"
+
 using namespace boost::python;
 using namespace std;
+using namespace liblibra;
+using namespace liblibra::libutil;
 
+
+/*
 // Some useful (potentially) macros
 #define SWAP_2(x) ( (((x) & 0xff) << 8) | ((unsigned short)(x) >> 8) )
 #define SWAP_4(x) ( ((x) << 24) | (((x) << 8) & 0x00ff0000) | \
@@ -35,7 +41,7 @@ void get_value(T& val,char* memblock,int& pos){
   memcpy((void*)&val, &memblock[pos], sizeof(T)); pos += sizeof(T);
 //  cout<<val<<endl;
 }
-
+*/
 
 class MO{
 
@@ -179,7 +185,7 @@ public:
 
 // Functions using the arguments of wfc type
 void overlap(wfc& wfc1,int k1,int minband,int maxband,std::string filename);
-void energy(wfc& wfc1,int k,int minband,int maxband,std::string filename);
+void pw_energy(wfc& wfc1,int k,int minband,int maxband,std::string filename);
 void nac(wfc& wfc1,wfc& wfc2,int k1,int k2,int minband,int maxband,double dt,std::string filename);
 void ham(wfc& wfc1,wfc& wfc2,int k1,int k2,int minband,int maxband,double dt,std::string filename);
 

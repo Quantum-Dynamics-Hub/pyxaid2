@@ -12,11 +12,14 @@
 
 #include "matrix.h"
 #include "state.h"
-#include "units.h"
+#include "units_pyxaid.h"
 #include "InputStructure.h"
 #include <boost/python.hpp>
 using namespace boost::python;
 using namespace std;
+
+#include "liblibra_core.h"
+using namespace liblibra::librandom;
 
 
 
@@ -195,7 +198,7 @@ public:
   void update_hop_prob_gfsh(double dt,int is_boltz_flag,double Temp,matrix& Ef,double Ex, matrix&);
   void init_hop_prob1(); 
 
-  void check_decoherence(double dt,int boltz_flag,double Temp,matrix& rates); // practically DISH correction
+  void check_decoherence(double dt,int boltz_flag,double Temp,matrix& rates, Random& rnd); // practically DISH correction
 
   void propagate_coefficients(double dt,matrix& Ef);  // Trotter factorization
   void propagate_coefficients(double dt,matrix& Ef,matrix&);  // Trotter factorization with purostat

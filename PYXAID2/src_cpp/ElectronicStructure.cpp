@@ -8,9 +8,9 @@
 ***********************************************************/
 
 #include "ElectronicStructure.h"
-#include "aux.h"
+//#include "aux.h"
 #include "io.h"
-#include "random.h"
+//#include "random.h"
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -68,7 +68,7 @@ void ElectronicStructure::decohere(int i){
 }
 
 
-void ElectronicStructure::check_decoherence(double dt,int boltz_flag,double Temp,matrix& rates){
+void ElectronicStructure::check_decoherence(double dt,int boltz_flag,double Temp,matrix& rates, Random& rnd){
 
   update_decoherence_times(rates);
 
@@ -77,7 +77,7 @@ void ElectronicStructure::check_decoherence(double dt,int boltz_flag,double Temp
 
     if(t_m[i]>=rnd_i) { // Decoherence event occurs for state i
 
-        double zeta = uniform(0.0,1.0);
+        double zeta = rnd.uniform(0.0,1.0);
         double P = A->M[i*num_states+i].real(); // probability to decohere
 
         // In leu of hop rejection use Boltzmann factors
@@ -143,7 +143,7 @@ void ElectronicStructure::update_hop_prob(double dt,int boltz_flag, double Temp,
                      ).real();
 
 
-        double g_ij= (2.0*dt/(a_ii*hbar))*(A->M[i*num_states+j] * Hij ).imag(); // g_ij = P(i->j)
+        double g_ij= (2.0*dt/(a_ii*HBAR))*(A->M[i*num_states+j] * Hij ).imag(); // g_ij = P(i->j)
 
         if(g_ij<0.0){ g_ij = 0.0; }
 //        if(boltz_flag==1){ 
@@ -193,7 +193,7 @@ void ElectronicStructure::update_hop_prob_fssh(double dt,int boltz_flag, double 
         // Hcurr at this moments is -i*hbar*<i|d/dt|j>
         // Hprime* at this moment is -i*hbar*<i|p|j>, Ef will include: 2*e/m_e * A(t) * cos(omega*t)
 
-        g[i*num_states+j] = (2.0*dt/(a_ii*hbar))*(A->M[i*num_states+j] * Heff->M[i*num_states+j]).imag(); // g_ij = P(i->j)
+        g[i*num_states+j] = (2.0*dt/(a_ii*HBAR))*(A->M[i*num_states+j] * Heff->M[i*num_states+j]).imag(); // g_ij = P(i->j)
 
         if(g[i*num_states+j]<0.0){ g[i*num_states+j] = 0.0; }
 
@@ -408,8 +408,8 @@ void ElectronicStructure::rot(complex<double> Hij,double dt,int i,int j){
  note Hamiltonian is Hermitian: H_ij^* = H_ji
 ***********************************************************************/
 
-  double phi1 = 0.5*dt*Hij.imag()/hbar;
-  double phi2 = -dt*Hij.real()/hbar;
+  double phi1 = 0.5*dt*Hij.imag()/HBAR;
+  double phi2 = -dt*Hij.real()/HBAR;
 
   rot1(phi1,i,j);
   rot2(phi2,i,j);
@@ -425,7 +425,7 @@ void ElectronicStructure::phase(complex<double> Hii,double dt,int i){
   Because Hamiltonian is Hermitian its diagonal elements are fully real
 ***********************************************************************/
 
-  double phi = -dt*Hii.real()/hbar;
+  double phi = -dt*Hii.real()/HBAR;
   Ccurr->M[i] = std::complex<double>(cos(phi),sin(phi)) * Ccurr->M[i];
 
 }
@@ -499,7 +499,7 @@ void ElectronicStructure::propagate_coefficients(double dt,matrix& Ef,matrix& ra
       tau_m[i] += A->M[j*num_states+j].real()*rates.M[i*num_states+j].real();
     }// for j
 
-    phase(Hcurr->M[i*num_states+i]+Hprime+4.0*tau_m[i]*hbar,dt,i);
+    phase(Hcurr->M[i*num_states+i]+Hprime+4.0*tau_m[i]*HBAR,dt,i);
   }
 
   // exp(iLij * dt/2)  <----
@@ -526,8 +526,8 @@ void ElectronicStructure::propagate_coefficients1(double dt,int opt,matrix& Ef){
 
   complex<double> i(0.0,1.0);
   *Hcurr = *Hcurr + dt*(*dHdt);
-  if(opt==1){  *Cnext = *Ccurr - (i*dt/hbar)*(*Hcurr) * (*Ccurr);      }
-  else if(opt==2){ *Cnext = *Cprev - 2.0*(i*dt/hbar)*(*Hcurr) * (*Ccurr); }
+  if(opt==1){  *Cnext = *Ccurr - (i*dt/HBAR)*(*Hcurr) * (*Ccurr);      }
+  else if(opt==2){ *Cnext = *Cprev - 2.0*(i*dt/HBAR)*(*Hcurr) * (*Ccurr); }
 
   *Cprev = *Ccurr;
   *Ccurr = *Cnext;
@@ -543,7 +543,7 @@ void ElectronicStructure::propagate_coefficients2(double dt,matrix& Ef){
   C(dt) = exp(-i*dt*H/hbar) * C(0)
 *************************************************************/
   double tol = 1e-12;
-  complex<double> arg(0.0,(-dt/hbar));
+  complex<double> arg(0.0,(-dt/HBAR));
 
   // hermitian symmetrize Hcurr - just to be sure the algorithm will work better
   matrix tmp(Hcurr->n_rows,Hcurr->n_cols);

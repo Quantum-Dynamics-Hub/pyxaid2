@@ -16,18 +16,25 @@
 #include <stdlib.h>
 #include <time.h>
 #include "ElectronicStructure.h"
-#include "aux.h"
+//#include "aux.h"
 #include "io.h"
 #include "namd.h"
 #include <boost/python.hpp>
 using namespace boost::python;
 using namespace std;
 
+#include "liblibra_core.h"
+using namespace liblibra;
+using namespace liblibra::librandom;
+using namespace liblibra::libutil;
+
 
 int namd(boost::python::dict inp_params){
 
+  Random rnd;
+
   time_t t1 = clock();
-  complex<double> ihbar(0.0,hbar);
+  complex<double> ihbar(0.0,HBAR);
 
 //>>>>>>>>>>>>>>>>>>>>>>>> INITIALIZATION PART <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -91,7 +98,7 @@ int namd(boost::python::dict inp_params){
     for(int j=0;j<max_indx;j++){
       // -------------------- Real part of the Hamiltonian matrix -------------------------------------
       vector< vector<double> > Ham_re, Ham_re_crop;
-      std::string Ham_re_file; Ham_re_file = params.Ham_re_prefix + int2string(j) + params.Ham_re_suffix;
+      std::string Ham_re_file; Ham_re_file = params.Ham_re_prefix + int2str(j) + params.Ham_re_suffix;
 
       if(params.debug_flag==1){ cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl; }
       file2matrix(Ham_re_file,Ham_re);
@@ -101,7 +108,7 @@ int namd(boost::python::dict inp_params){
 
       // -------------------- Imaginary part of the Hamiltonian matrix -------------------------------------
       vector< vector<double> > Ham_im, Ham_im_crop;
-      std::string Ham_im_file; Ham_im_file = params.Ham_im_prefix + int2string(j) + params.Ham_im_suffix;
+      std::string Ham_im_file; Ham_im_file = params.Ham_im_prefix + int2str(j) + params.Ham_im_suffix;
 
       if(params.debug_flag==1){ cout<<"Reading Hamiltonian file(imaginary part) = "<<Ham_im_file<<endl; }
       file2matrix(Ham_im_file,Ham_im);
@@ -140,9 +147,9 @@ int namd(boost::python::dict inp_params){
         vector< vector<double> > Hprime_y, Hprime_y_crop;
         vector< vector<double> > Hprime_z, Hprime_z_crop;
 
-        std::string Hprime_x_file; Hprime_x_file = params.Hprime_x_prefix + int2string(j) + params.Hprime_x_suffix;
-        std::string Hprime_y_file; Hprime_y_file = params.Hprime_y_prefix + int2string(j) + params.Hprime_y_suffix;
-        std::string Hprime_z_file; Hprime_z_file = params.Hprime_z_prefix + int2string(j) + params.Hprime_z_suffix;
+        std::string Hprime_x_file; Hprime_x_file = params.Hprime_x_prefix + int2str(j) + params.Hprime_x_suffix;
+        std::string Hprime_y_file; Hprime_y_file = params.Hprime_y_prefix + int2str(j) + params.Hprime_y_suffix;
+        std::string Hprime_z_file; Hprime_z_file = params.Hprime_z_prefix + int2str(j) + params.Hprime_z_suffix;
 
         if(params.debug_flag==1){ cout<<"Reading transition dipole file in momentum representation (x component) = "
         <<Hprime_x_file<<endl; }
@@ -216,7 +223,7 @@ int namd(boost::python::dict inp_params){
 
         // -------------------- Real part of the Hamiltonian matrix -------------------------------------
         vector< vector<double> > Ham_re, Ham_re_crop;
-        std::string Ham_re_file; Ham_re_file = params.Ham_re_prefix + int2string(j) + params.Ham_re_suffix;
+        std::string Ham_re_file; Ham_re_file = params.Ham_re_prefix + int2str(j) + params.Ham_re_suffix;
 
         if(params.debug_flag==1){ cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl; }
         file2matrix(Ham_re_file,Ham_re);
@@ -224,7 +231,7 @@ int namd(boost::python::dict inp_params){
 
         // -------------------- Imaginary part of the Hamiltonian matrix -------------------------------------
         vector< vector<double> > Ham_im, Ham_im_crop;
-        std::string Ham_im_file; Ham_im_file = params.Ham_im_prefix + int2string(j) + params.Ham_im_suffix;
+        std::string Ham_im_file; Ham_im_file = params.Ham_im_prefix + int2str(j) + params.Ham_im_suffix;
 
         if(params.debug_flag==1){ cout<<"Reading Hamiltonian file(imaginary part) = "<<Ham_im_file<<endl; }
         file2matrix(Ham_im_file,Ham_im);
@@ -264,9 +271,9 @@ int namd(boost::python::dict inp_params){
           vector< vector<double> > Hprime_y, Hprime_y_crop;
           vector< vector<double> > Hprime_z, Hprime_z_crop;
 
-          std::string Hprime_x_file; Hprime_x_file = params.Hprime_x_prefix + int2string(j) + params.Hprime_x_suffix;
-          std::string Hprime_y_file; Hprime_y_file = params.Hprime_y_prefix + int2string(j) + params.Hprime_y_suffix;
-          std::string Hprime_z_file; Hprime_z_file = params.Hprime_z_prefix + int2string(j) + params.Hprime_z_suffix;
+          std::string Hprime_x_file; Hprime_x_file = params.Hprime_x_prefix + int2str(j) + params.Hprime_x_suffix;
+          std::string Hprime_y_file; Hprime_y_file = params.Hprime_y_prefix + int2str(j) + params.Hprime_y_suffix;
+          std::string Hprime_z_file; Hprime_z_file = params.Hprime_z_prefix + int2str(j) + params.Hprime_z_suffix;
 
           if(params.debug_flag==1){ cout<<"Reading transition dipole file(x component) = "<<Hprime_x_file<<endl; }
           file2matrix(Hprime_x_file,Hprime_x);
@@ -541,7 +548,7 @@ int namd(boost::python::dict inp_params){
 
 
     // Print the energies of multi-electron states
-    string outfile = (params.scratch_dir + "/me_energies"+int2string(icond));
+    string outfile = (params.scratch_dir + "/me_energies"+int2str(icond));
     cout<<"The energies of basis  states (with respect to defined ground state) for the this initial condition are written in file "<<outfile<<"\n";
     ofstream out; out.open(outfile.c_str(),ios::out);
     for(j=iconds[icond][0];j<iconds[icond][0]+params.namdtime;j++){
@@ -562,11 +569,11 @@ int namd(boost::python::dict inp_params){
     //>>>>> Run NA-MD
 //    if(params.runtype=="namd" && params.decoherence==0){
 //        cout<<"Starting na-md simulations\n";
-//        run_namd(params,me_es,me_states,icond); 
+//        run_namd(params,me_es,me_states,icond,rnd); 
 //    }
 //    if(params.runtype=="namd" && params.decoherence>0){
     cout<<"Starting na-md simulations with (optional) decoherence\n";
-    run_namd1(params,me_es,me_states,icond);
+    run_namd1(params,me_es,me_states,icond, rnd);
 //    }
 
     oe_es.clear();

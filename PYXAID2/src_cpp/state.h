@@ -7,8 +7,8 @@
  * http://www.gnu.org/copyleft/gpl.txt
 ***********************************************************/
 
-#ifndef state_h
-#define state_h
+#ifndef pyxaid_state_h
+#define pyxaid_state_h
 
 #include <vector>
 #include <math.h>
@@ -21,8 +21,13 @@
 using namespace boost::python;
 using namespace std;
 
+#include "liblibra_core.h"
+using namespace liblibra;
+using namespace liblibra::libutil;
+
+
 int ext2int(int,vector<int>&);
-int delta(vector<int>& A,vector<int>& B,int& a,int& b);
+//int delta(vector<int>& A,vector<int>& B,int& a,int& b);
 
   
 class me_state{

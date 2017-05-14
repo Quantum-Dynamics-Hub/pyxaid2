@@ -9,7 +9,10 @@
 
 #include "state.h"
 #include "namd.h"
-#include "aux.h"
+//#include "aux.h"
+
+using namespace liblibra;
+using namespace liblibra::libutil;
 
 int ext2int(int external,vector<int>& active_space){
 // Orbital indexing conversion
@@ -29,7 +32,7 @@ int ext2int(int external,vector<int>& active_space){
   return internal;
 }
 
-
+/*
 int delta(vector<int>& A,vector<int>& B,int& a,int& b){
 // This is more general approach - search for pair of indices in A and B
 // which are different, they are then assigned to a and b correspondingly
@@ -81,7 +84,7 @@ int delta(vector<int>& A,vector<int>& B,int& a,int& b){
 
   return res;
 }
-
+*/
 
 int me_state::calculate_Exc(vector<int>& Exc_i,vector<int>& Exc_j,vector<double>& Exc_val,vector<int>& shift_i,vector<double>& shift_E){
   Exc = 0.0;

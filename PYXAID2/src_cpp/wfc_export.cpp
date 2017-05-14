@@ -46,7 +46,7 @@ void export_wfc(){
 
   def("overlap",&overlap);
   def("nac",&nac);
-  def("energy",&energy);
+  def("energy",&pw_energy);
   def("ham",&ham);
 
 }

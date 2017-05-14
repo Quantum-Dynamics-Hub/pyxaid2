@@ -8,8 +8,15 @@
 ***********************************************************/
 
 #include "wfc.h"
-#include "aux.h"
+//#include "aux.h"
 #include "io.h"
+
+//#include "liblibra_core.h"
+//using namespace liblibra;
+//using namespace liblibra::libutil;
+
+//using liblibra::libutil::find_section;
+//using liblibra::libutil::split_line;
 
 void wfc::QE_read_binary_wfc(std::string filename,int _nkpts,int _nbands,int _tot_npw){
 
@@ -121,7 +128,8 @@ void wfc::QE_read_acsii_wfc(std::string filename){
         int i = kbeg[k][band]+1+pw;
 
         vector<std::string> At;
-        split_line2(A[i],At,',');
+//        split_line2(A[i],At,',');
+        split_line(A[i], At, ',');
         double re = atof(At[0].c_str());
         double im = atof(At[1].c_str());
 

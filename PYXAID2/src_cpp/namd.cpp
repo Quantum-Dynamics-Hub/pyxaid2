@@ -8,9 +8,15 @@
 ***********************************************************/
 
 #include "namd.h"
-#include "aux.h"
+//#include "aux.h"
 #include "io.h"
-#include "random.h"
+//#include "random.h"
+
+#include "liblibra_core.h"
+using namespace liblibra;
+using namespace liblibra::librandom;
+using namespace liblibra::libutil;
+
 
 /*****************************************************************
   Functions implemented in this file:
@@ -122,11 +128,11 @@ double decoherence_rates(vector<double>& x,double dt,std::string rt_dir,int regr
 
   // Calculate first "cumulants" int_0_t C(t) dt ,for all t
   double sum = 0.0;
-  for(t=0;t<sz;t++){ IC[t] = sum;  sum +=  C[t]*(dt/hbar); }
+  for(t=0;t<sz;t++){ IC[t] = sum;  sum +=  C[t]*(dt/HBAR); }
 
   // Calculate second "cumulants" int_0_t IC(t) dt ,for all t
   sum = 0.0;
-  for(t=0;t<sz;t++){ IIC[t] = sum; sum += IC[t]*(dt/hbar); }
+  for(t=0;t<sz;t++){ IIC[t] = sum; sum += IC[t]*(dt/HBAR); }
 
   // Calculate D(t), see Madrid, et. al
   for(t=0;t<sz;t++){ D[t] = exp(-IIC[t]); }
@@ -271,7 +277,7 @@ void Efield(InputStructure& is,double t,matrix& E,double& Eex){
     if(is.is_field_freq){
            if(is.field_freq_units=="1/fs"){ omega = 2.0*M_PI*is.field_freq; }     // input is linear frequency
       else if(is.field_freq_units=="rad/fs"){ omega = is.field_freq;  }           // input is angular frequency
-      else if(is.field_freq_units=="eV"){ omega = is.field_freq/hbar; }           // input is energy in eV
+      else if(is.field_freq_units=="eV"){ omega = is.field_freq/HBAR; }           // input is energy in eV
       else if(is.field_freq_units=="nm"){ omega = 2.0*M_PI*300.0/is.field_freq; } // input is wavelength in nm
       else{  cout<<"Units of the filed frequency must be specified. Exiting...\n"; exit(0); }
     }// is_field_freq
@@ -299,7 +305,7 @@ void Efield(InputStructure& is,double t,matrix& E,double& Eex){
     E.M[1] = iy*Em*Ampl*2.0*cos(omega*t);
     E.M[2] = iz*Em*Ampl*2.0*cos(omega*t);
 
-    if( ((Tm-0.5*T)<t) && (t<(Tm+0.5*T)) ){  Eex = hbar*omega; }
+    if( ((Tm-0.5*T)<t) && (t<(Tm+0.5*T)) ){  Eex = HBAR*omega; }
 
   }// is.is_field==1
   else{ E = 0.0; }
@@ -450,7 +456,7 @@ void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_e
   int sz = me_es.size();              // Number of nuclear iterations (ionic steps)
   int N = me_es[0].num_states;
   matrix rij(N,N);
-  ofstream out((is.scratch_dir+"/decoherence_rates_icond"+int2string(icond)+".txt").c_str(),ios::out);
+  ofstream out((is.scratch_dir+"/decoherence_rates_icond"+int2str(icond)+".txt").c_str(),ios::out);
 
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
@@ -469,7 +475,7 @@ void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_e
         for(t=0;t<sz;t++){ Eij[t] -= ave_dEij; }
 
         // Compute the decoherence rate for pair i,j
-        rij.M[i*N+j] = decoherence_rates(Eij,is.nucl_dt,is.scratch_dir+"/icond"+int2string(icond)+"pair"+int2string(i)+"_"+int2string(j),is.regress_mode);
+        rij.M[i*N+j] = decoherence_rates(Eij,is.nucl_dt,is.scratch_dir+"/icond"+int2str(icond)+"pair"+int2str(i)+"_"+int2str(j),is.regress_mode);
       }
       out<<rij.M[i*N+j].real()<<" ";
     }// for j
@@ -480,7 +486,7 @@ void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_e
 }
 
 
-void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond){
+void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond, Random& rnd){
   cout<<"Entering run_namd function...\n";
 
   std::string outfile;
@@ -496,7 +502,7 @@ void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_s
   //}// algorithm = 0
 
   // Output populations as a function of time
-  outfile = is.scratch_dir+"/me_pop"+int2string(icond);
+  outfile = is.scratch_dir+"/me_pop"+int2str(icond);
   out.open(outfile.c_str(),ios::out);
   for(int i=0;i<sz;i++){
     out<<"time "<<i<<" ";
@@ -528,7 +534,7 @@ void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_s
     }// for namdtime
   }// num_sh_traj
 
-  outfile = is.scratch_dir+"/out"+int2string(icond);
+  outfile = is.scratch_dir+"/out"+int2str(icond);
   out.open(outfile.c_str(),ios::out);
   for(i=0;i<sz;i++){
     out<<"time "<<i<<" ";
@@ -545,7 +551,7 @@ void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_s
 
 }
 
-void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond){
+void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond, Random& rnd){
 // This version is different from run_namd function in that it does not separate solving TD-SE and computation
 // of the surface hopping probabilities. This is because here we inlcude decoherence effects, which effectively
 // modify wavefunction (TD-SE solution) along the trajectories stochastically, so it is not possible to separate.
@@ -577,7 +583,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
   if(is.decoherence>0){
     cout<<"Reading decoherence rate matrix for this initial condition...\n";
-    std::string filename = is.scratch_dir+"/decoherence_rates_icond"+int2string(icond)+".txt";
+    std::string filename = is.scratch_dir+"/decoherence_rates_icond"+int2str(icond)+".txt";
     cout<<"Expected filename is: "<<filename<<endl;
 
     ifstream in;
@@ -592,7 +598,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
     if(is.decoherence==2){ // NAC scaling
 
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2string(icond)+".txt";
+      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2str(icond)+".txt";
       ofstream out(filename.c_str(),ios::out);
 
       int i,j,t;
@@ -637,7 +643,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
               if(rates.M[i*nst+j].real()>0.0){
                 tau = (1.0/rates.M[i*nst+j].real());
               }
-              double x = 0.5*fabs(dEij * tau / hbar);
+              double x = 0.5*fabs(dEij * tau / HBAR);
               double F = (x/sqrt(M_PI)) * exp(-x*x);
               F = sqrt(F);
 
@@ -657,7 +663,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
     if(is.decoherence==3){  // NAC scaling - spectral density variant
 
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2string(icond)+".txt";
+      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2str(icond)+".txt";
       ofstream out(filename.c_str(),ios::out);
 
       int i,j,t;
@@ -683,7 +689,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
           if(i!=j){
     
             cout<<"Reading spectral density for this initial condition...\n";
-            std::string filename = is.scratch_dir+"/icond"+int2string(icond)+"pair"+int2string(i)+"_"+int2string(j)+"Spectral_density.txt";
+            std::string filename = is.scratch_dir+"/icond"+int2str(icond)+"pair"+int2str(i)+"_"+int2str(j)+"Spectral_density.txt";
             cout<<"Expected filename is: "<<filename<<endl;
 
             ifstream in;
@@ -722,7 +728,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 //              double scl = J[indx]/sumJ;  // density of vibronic states at given gap
               double fluct = (dEij - E0[i][j]);
               int indx = floor((fabs(fluct)-0.0)/dE);
-              double scl = J[indx]* fluct*fluct/(hbar*hbar);
+              double scl = J[indx]* fluct*fluct/(HBAR*HBAR);
 
               if(scl<0.0){ scl = 0.0; }
 
@@ -749,7 +755,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
     if(is.decoherence==4){ // NAC scaling (decoherence==2) but with extrapolation
 
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2string(icond)+".txt";
+      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2str(icond)+".txt";
       ofstream out(filename.c_str(),ios::out);
 
       double maxx = sqrt(0.5);
@@ -775,13 +781,13 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
               double omega_v = 2000.0 * cm_inv;  // eV
 
               
-              double lambda_v = hbar*hbar/(kT*tau*tau);
+              double lambda_v = HBAR*HBAR/(kT*tau*tau);
               double lambda_s = lambda_v; 
 
-              double  S = lambda_v / (hbar*omega_v);
+              double  S = lambda_v / (HBAR*omega_v);
               //    print "Huang-Rhys factor = ", S
 
-              double xi_v = hbar*omega_v/(2.0*kT);
+              double xi_v = HBAR*omega_v/(2.0*kT);
               //    print "xi_v = ", xi_v
 
               double prefac = 1.0/sqrt(4.0*M_PI*lambda_s*kT);
@@ -796,7 +802,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
                 }             
                 double A_m = exp(-S) * I;
 
-                double x = (fabs(dEij) + m*hbar*omega_v);
+                double x = (fabs(dEij) + m*HBAR*omega_v);
                 res += A_m * exp(-( x*x/(4.0*lambda_s*kT) ) );
               }
               res *= prefac;
@@ -952,7 +958,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
         curr_state = me_es[i].curr_state;
       }
       else if(is.decoherence==1){  // DISH - currently any value >0
-        me_es[i].check_decoherence(is.nucl_dt,is.boltz_flag,is.Temp,rates);
+        me_es[i].check_decoherence(is.nucl_dt,is.boltz_flag,is.Temp,rates, rnd);
         curr_state = me_es[i].curr_state;
       }// decoherence == 1
 
@@ -977,7 +983,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
           me_es[i].t_m[0] = 0.0;
 
-          double argg = M_PI*uniform(-1.0,1.0);
+          double argg = M_PI*rnd.uniform(-1.0,1.0);
           *me_es[i].Ccurr  = 0.0;
            me_es[i].Ccurr->M[curr_state] = complex<double>( cos(argg), sin(argg) );          
         }
@@ -1006,10 +1012,10 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
   //================ Now output results ======================
   // Output populations as a function of time
-  outfile1 = is.scratch_dir+"/me_pop"+int2string(icond);
+  outfile1 = is.scratch_dir+"/me_pop"+int2str(icond);
   out1.open(outfile1.c_str(),ios::out);
 
-  outfile2 = is.scratch_dir+"/out"+int2string(icond);
+  outfile2 = is.scratch_dir+"/out"+int2str(icond);
   out2.open(outfile2.c_str(),ios::out);
 
   for(i=0;i<sz;i++){

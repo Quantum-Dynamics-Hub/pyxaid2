@@ -82,7 +82,7 @@ int namd(boost::python::dict inp_params){
   cout<<"Maximal Hamiltonian file to read is "<<params.Ham_re_prefix<<(max_indx+1)<<params.Ham_re_suffix<<endl;
 
   // Read all necessary couplings and transition dipole (if necessary) files - batch mode
-  vector< CMATRIX > H_batch;
+  vector< CMATRIX > H_batch,Haa_batch,Hab_batch,Hbb_batch;
   vector< CMATRIX > Hprime_x_batch;
   vector< CMATRIX > Hprime_y_batch;
   vector< CMATRIX > Hprime_z_batch;
@@ -98,22 +98,59 @@ int namd(boost::python::dict inp_params){
     for(int j=0;j<max_indx;j++){
       // -------------------- Real part of the Hamiltonian matrix -------------------------------------
       vector< vector<double> > Ham_re, Ham_re_crop;
+      vector< vector<double> > Haa_re, Haa_re_crop;
+      vector< vector<double> > Hab_re, Hab_re_crop;
+      vector< vector<double> > Hbb_re, Hbb_re_crop;
+            
       std::string Ham_re_file; Ham_re_file = params.Ham_re_prefix + int2str(j) + params.Ham_re_suffix;
+      std::string Haa_re_file; Haa_re_file = params.Haa_re_prefix + int2str(j) + params.Haa_re_suffix;
+      std::string Hab_re_file; Hab_re_file = params.Hab_re_prefix + int2str(j) + params.Hab_re_suffix;
+      std::string Hbb_re_file; Hbb_re_file = params.Hbb_re_prefix + int2str(j) + params.Hbb_re_suffix;
+      
+      if(params.debug_flag==1){ 
+	      cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl;
+		  cout<<"Reading Haa file(real part) = "<<Haa_re_file<<endl;
+		  cout<<"Reading Hab file(real part) = "<<Hab_re_file<<endl;
+		  cout<<"Reading Hbb file(real part) = "<<Hbb_re_file<<endl;
+		   }
 
-      if(params.debug_flag==1){ cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl; }
+      
       file2matrix(Ham_re_file,Ham_re);
+      file2matrix(Haa_re_file,Haa_re);
+      file2matrix(Hab_re_file,Hab_re);
+      file2matrix(Hbb_re_file,Hbb_re);
 //      cout<<"Ham_re = :"<<endl; show_2D(Ham_re);
       extract_2D(Ham_re,Ham_re_crop,me_states[0].active_space,-1); // also crop the matrix to the active space
+      extract_2D(Haa_re,Haa_re_crop,me_states[0].active_space,-1);
+      extract_2D(Hab_re,Hab_re_crop,me_states[0].active_space,-1);
+      extract_2D(Hbb_re,Hbb_re_crop,me_states[0].active_space,-1);
+      
 //      cout<<"Ham_re(cropped):"<<endl; show_2D(Ham_re_crop);
 
       // -------------------- Imaginary part of the Hamiltonian matrix -------------------------------------
-      vector< vector<double> > Ham_im, Ham_im_crop;
+      vector< vector<double> > Ham_im,Ham_im_crop,Haa_im,Haa_im_crop,Hab_im,Hab_im_crop,Hbb_im,Hbb_im_crop;
       std::string Ham_im_file; Ham_im_file = params.Ham_im_prefix + int2str(j) + params.Ham_im_suffix;
-
-      if(params.debug_flag==1){ cout<<"Reading Hamiltonian file(imaginary part) = "<<Ham_im_file<<endl; }
+      std::string Haa_im_file; Haa_im_file = params.Haa_im_prefix + int2str(j) + params.Haa_im_suffix;
+      std::string Hab_im_file; Hab_im_file = params.Hab_im_prefix + int2str(j) + params.Hab_im_suffix;
+      std::string Hbb_im_file; Hbb_im_file = params.Hbb_im_prefix + int2str(j) + params.Hbb_im_suffix;
+      
+      if(params.debug_flag==1){ 
+          cout<<"Reading Hamiltonian file(imaginary part) = "<<Ham_im_file<<endl;
+          cout<<"Reading Haa file(imaginary part) = "<<Haa_im_file<<endl;
+		  cout<<"Reading Hab file(imaginary part) = "<<Hab_im_file<<endl;
+		  cout<<"Reading Hbb file(imaginary part) = "<<Hbb_im_file<<endl;
+		  }
+		  
       file2matrix(Ham_im_file,Ham_im);
+      file2matrix(Haa_im_file,Haa_im);
+      file2matrix(Hab_im_file,Hab_im);
+      file2matrix(Hbb_im_file,Hbb_im);
+            
       extract_2D(Ham_im,Ham_im_crop,me_states[0].active_space,-1); // also crop the matrix to the active space
-
+      extract_2D(Haa_im,Haa_im_crop,me_states[0].active_space,-1);
+      extract_2D(Hab_im,Hab_im_crop,me_states[0].active_space,-1);
+      extract_2D(Hbb_im,Hbb_im_crop,me_states[0].active_space,-1);
+      
       //--------------------- Optionally preprocess matrices ----------------------------------------------
       if(params.read_couplings=="batch_all_in_one"){
         for(int a=0;a<Ham_re_crop.size();a++){
@@ -132,13 +169,24 @@ int namd(boost::python::dict inp_params){
 
       // -------------------- Create Hamiltonian matrix ---------------------------------------------------
       CMATRIX Ham(Ham_re_crop,Ham_im_crop);
+      CMATRIX Haa(Haa_re_crop,Haa_im_crop);
+      CMATRIX Hab(Hab_re_crop,Hab_im_crop);
+      CMATRIX Hbb(Hbb_re_crop,Hbb_im_crop);
+      
 //      cout<<"Composed Ham = "<<Ham<<endl;
 
       //--------------------- Scale Ham to units of [Energy] = eV, [time] = fs ----------------------------
       Ham *= en_scl;
+      Haa *= en_scl;
+      Hab *= en_scl;
+      Hbb *= en_scl;
+      
       if(params.debug_flag==2){   cout<<"Scaled Ham = "<<Ham<<endl; }
 
       H_batch.push_back(Ham);
+      Haa_batch.push_back(Haa);
+      Hab_batch.push_back(Hab);
+      Hbb_batch.push_back(Hbb);
 
 
       // -------------------- Real part of the transition dipole matrix -------------------------------------
@@ -216,7 +264,7 @@ int namd(boost::python::dict inp_params){
       if(params.debug_flag==1){    cout<<"----------- j = "<<j<<" -------------------"<<endl;}
       int t = (j - iconds[icond][0]);  // Time
 
-      CMATRIX* T;
+      CMATRIX *T, *Taa, *Tab, *Tbb;
       CMATRIX *Tx, *Ty, *Tz;
 
       if(params.read_couplings=="online" || params.read_couplings=="online_all_in_one"){
@@ -309,6 +357,9 @@ int namd(boost::python::dict inp_params){
       }// "online"
       else if(params.read_couplings=="batch"){ 
         T = new CMATRIX(H_batch[j].n_rows,H_batch[j].n_cols);   *T = H_batch[j];
+        Taa = new CMATRIX(Haa_batch[j].n_rows,Haa_batch[j].n_cols);   *Taa = Haa_batch[j];
+        Tab = new CMATRIX(Hab_batch[j].n_rows,Hab_batch[j].n_cols);   *Tab = Hab_batch[j];
+        Tbb = new CMATRIX(Hbb_batch[j].n_rows,Hbb_batch[j].n_cols);   *Tbb = Hbb_batch[j];
 
         if(params.is_field==1){
           Tx = new CMATRIX(Hprime_x_batch[j].n_rows,Hprime_x_batch[j].n_cols); *Tx = Hprime_x_batch[j];
@@ -318,10 +369,13 @@ int namd(boost::python::dict inp_params){
       }// "batch"
 
       CMATRIX Hij(T->n_rows,T->n_cols);    Hij = *T; 
+      CMATRIX Haa(Taa->n_rows,Taa->n_cols);    Haa = *Taa; 
+      CMATRIX Hab(Tab->n_rows,Tab->n_cols);    Hab = *Tab; 
+      CMATRIX Hbb(Tbb->n_rows,Tbb->n_cols);    Hbb = *Tbb;
       CMATRIX Hij_prime_x(T->n_rows,T->n_cols); Hij_prime_x = 0.0; 
       CMATRIX Hij_prime_y(T->n_rows,T->n_cols); Hij_prime_y = 0.0;
       CMATRIX Hij_prime_z(T->n_rows,T->n_cols); Hij_prime_z = 0.0;
-      delete T;
+      delete T, Taa, Tab, Tbb;;
 
       if(params.is_field==1){   Hij_prime_x = *Tx; Hij_prime_y = *Ty; Hij_prime_z = *Tz;  delete Tx; delete Ty; delete Tz; }
 
@@ -355,8 +409,8 @@ int namd(boost::python::dict inp_params){
 
              **************************************/
            //Couplings: dij = <i|d/dt|j> 
-           oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
-           oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
+           //oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
+           //oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
 
            //Perturbations
            oe_es[t].Hprimex->M[2*k1*(2*numstates)+2*k2] = Hij_prime_x.M[k1*numstates+k2];
@@ -370,6 +424,9 @@ int namd(boost::python::dict inp_params){
 
 
             if(params.alp_bet==0){ // Electrons with a spin, no coupling between alp and bet, default
+
+		      oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
+		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
 
               oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
               oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = 0.0;
@@ -387,9 +444,13 @@ int namd(boost::python::dict inp_params){
             }
             else if(params.alp_bet==1){ // Spinless electrons, coupling between alp and bet is !=0, based only
                                         // on spatial part of the wavefunctions
+                                        
+              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
+		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
+		      
               oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
               oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
-
+              
               oe_es[t].Hprimex->M[(2*k1+1)*(2*numstates)+2*k2] =
               oe_es[t].Hprimex->M[2*k1*(2*numstates)+2*k2+1] = Hij_prime_x.M[k1*numstates+k2];
 
@@ -398,8 +459,18 @@ int namd(boost::python::dict inp_params){
 
               oe_es[t].Hprimez->M[(2*k1+1)*(2*numstates)+2*k2] =
               oe_es[t].Hprimez->M[2*k1*(2*numstates)+2*k2+1] = Hij_prime_z.M[k1*numstates+k2];
+		  }
 
-            }
+            else if(params.alp_bet==2){//the transition dipole was not calculated in alp_bet==2
+			
+			  oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Haa.M[k1*numstates+k2];
+			  oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hbb.M[k1*numstates+k2];
+			  
+		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
+              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hab.M[k1*numstates+k2];     
+			}
+			
+            
           }// for k2
         }// for k1
 //      }// if namd

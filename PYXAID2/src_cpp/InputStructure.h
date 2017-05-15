@@ -29,6 +29,21 @@ public:
   std::string Ham_re_suffix;    int is_Ham_re_suffix;
   std::string Ham_im_prefix;    int is_Ham_im_prefix;
   std::string Ham_im_suffix;    int is_Ham_im_suffix;
+  
+  std::string Haa_re_prefix;    int is_Haa_re_prefix;
+  std::string Haa_re_suffix;    int is_Haa_re_suffix;
+  std::string Haa_im_prefix;    int is_Haa_im_prefix;
+  std::string Haa_im_suffix;    int is_Haa_im_suffix;
+  
+  std::string Hab_re_prefix;    int is_Hab_re_prefix;
+  std::string Hab_re_suffix;    int is_Hab_re_suffix;
+  std::string Hab_im_prefix;    int is_Hab_im_prefix;
+  std::string Hab_im_suffix;    int is_Hab_im_suffix;
+  
+  std::string Hbb_re_prefix;    int is_Hbb_re_prefix;
+  std::string Hbb_re_suffix;    int is_Hbb_re_suffix;
+  std::string Hbb_im_prefix;    int is_Hbb_im_prefix;
+  std::string Hbb_im_suffix;    int is_Hbb_im_suffix;
 
   // only real components are non-zero, so below files are for _re
   std::string Hprime_x_prefix;  int is_Hprime_x_prefix;
@@ -66,6 +81,7 @@ public:
   int alp_bet;      int is_alp_bet;        // coupling between alpha and beta chanels, 1 - yes, 0 - no
   int decoherence;  int is_decoherence;    // choose the decoherence method to use; 0 - no decoherence
   int regress_mode; int is_regress_mode;   // regression mode used during dephasing times calculations
+  int td_pop;       int is_td_pop;         //whether to output time-dependent population
 
   // Electromagnetic field
   int is_field;             int is_is_field;       // flag to include explicit field

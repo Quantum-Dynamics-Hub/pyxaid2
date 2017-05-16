@@ -1,5 +1,6 @@
 /***********************************************************
- * Copyright (C) 2013 Alexey V. Akimov
+ * Copyright (C) 2017 Wei Li and Alexey V. Akimov
+ * Copyright (C) 2013-2016 Alexey V. Akimov
  * This file is distributed under the terms of the
  * GNU General Public License as published by the
  * Free Software Foundation; either version 3 of the
@@ -30,8 +31,15 @@ void InputStructure::init(){
   is_boltz_flag = is_debug_flag = is_Temp =
   is_nucl_dt = is_elec_dt = is_integrator =
   is_runtype = 
+  is_td_pop = 
   is_Ham_re_prefix = is_Ham_re_suffix = 
   is_Ham_im_prefix = is_Ham_im_suffix =
+  is_Haa_re_prefix = is_Haa_re_suffix = 
+  is_Haa_im_prefix = is_Haa_im_suffix =
+  is_Hab_re_prefix = is_Hab_re_suffix = 
+  is_Hab_im_prefix = is_Hab_im_suffix =
+  is_Hbb_re_prefix = is_Hbb_re_suffix = 
+  is_Hbb_im_prefix = is_Hbb_im_suffix =
   is_Hprime_x_prefix = is_Hprime_z_prefix = is_Hprime_z_prefix =
   is_Hprime_x_suffix = is_Hprime_z_suffix = is_Hprime_z_suffix = 
 //  is_energy_prefix =
@@ -52,7 +60,24 @@ void InputStructure::echo(){
   if(is_Ham_re_suffix){ cout<<"Ham_re_suffix = "<<Ham_re_suffix<<endl; }
   if(is_Ham_im_prefix){ cout<<"Ham_im_prefix = "<<Ham_im_prefix<<endl; }
   if(is_Ham_im_suffix){ cout<<"Ham_im_suffix = "<<Ham_im_suffix<<endl; }
+  
+  if(is_Haa_re_prefix){ cout<<"Haa_re_prefix = "<<Haa_re_prefix<<endl; }
+  if(is_Haa_re_suffix){ cout<<"Haa_re_suffix = "<<Haa_re_suffix<<endl; }
+  if(is_Haa_im_prefix){ cout<<"Haa_im_prefix = "<<Haa_im_prefix<<endl; }
+  if(is_Haa_im_suffix){ cout<<"Haa_im_suffix = "<<Haa_im_suffix<<endl; }
 
+  if(is_Hab_re_prefix){ cout<<"Hab_re_prefix = "<<Hab_re_prefix<<endl; }
+  if(is_Hab_re_suffix){ cout<<"Hab_re_suffix = "<<Hab_re_suffix<<endl; }
+  if(is_Hab_im_prefix){ cout<<"Hab_im_prefix = "<<Hab_im_prefix<<endl; }
+  if(is_Hab_im_suffix){ cout<<"Hab_im_suffix = "<<Hab_im_suffix<<endl; }
+
+  if(is_Hbb_re_prefix){ cout<<"Hbb_re_prefix = "<<Hbb_re_prefix<<endl; }
+  if(is_Hbb_re_suffix){ cout<<"Hbb_re_suffix = "<<Hbb_re_suffix<<endl; }
+  if(is_Hbb_im_prefix){ cout<<"Hbb_im_prefix = "<<Hbb_im_prefix<<endl; }
+  if(is_Hbb_im_suffix){ cout<<"Hbb_im_suffix = "<<Hbb_im_suffix<<endl; }
+  
+  if(is_td_pop){ cout<<"td_pop = "<<td_pop<<endl; }
+  
   if(is_Hprime_x_prefix){ cout<<"Hprime_x_prefix = "<<Hprime_x_prefix<<endl; }
   if(is_Hprime_y_prefix){ cout<<"Hprime_y_prefix = "<<Hprime_y_prefix<<endl; }
   if(is_Hprime_z_prefix){ cout<<"Hprime_z_prefix = "<<Hprime_z_prefix<<endl; }
@@ -109,6 +134,23 @@ void InputStructure::set_default(){
   if(!is_Ham_re_suffix){ warning("Ham_re_suffix","_re");    Ham_re_suffix = "_re";  is_Ham_re_suffix = 1; }
   if(!is_Ham_im_prefix){ warning("Ham_im_prefix","Ham");    Ham_im_prefix = "Ham";  is_Ham_im_prefix = 1; }
   if(!is_Ham_im_suffix){ warning("Ham_im_suffix","_im");    Ham_im_suffix = "_im";  is_Ham_im_suffix = 1; }
+  
+  if(!is_Haa_re_prefix){ warning("Haa_re_prefix","Ham");    Haa_re_prefix = "Haa";  is_Haa_re_prefix = 1; }
+  if(!is_Haa_re_suffix){ warning("Haa_re_suffix","_re");    Haa_re_suffix = "_re";  is_Haa_re_suffix = 1; }
+  if(!is_Haa_im_prefix){ warning("Haa_im_prefix","Ham");    Haa_im_prefix = "Haa";  is_Haa_im_prefix = 1; }
+  if(!is_Haa_im_suffix){ warning("Haa_im_suffix","_im");    Haa_im_suffix = "_im";  is_Haa_im_suffix = 1; }
+
+  if(!is_Hab_re_prefix){ warning("Hab_re_prefix","Ham");    Hab_re_prefix = "Hab";  is_Hab_re_prefix = 1; }
+  if(!is_Hab_re_suffix){ warning("Hab_re_suffix","_re");    Hab_re_suffix = "_re";  is_Hab_re_suffix = 1; }
+  if(!is_Hab_im_prefix){ warning("Hab_im_prefix","Ham");    Hab_im_prefix = "Hab";  is_Hab_im_prefix = 1; }
+  if(!is_Hab_im_suffix){ warning("Hab_im_suffix","_im");    Hab_im_suffix = "_im";  is_Hab_im_suffix = 1; }
+
+  if(!is_Hbb_re_prefix){ warning("Hbb_re_prefix","Ham");    Hbb_re_prefix = "Hbb";  is_Hbb_re_prefix = 1; }
+  if(!is_Hbb_re_suffix){ warning("Hbb_re_suffix","_re");    Hbb_re_suffix = "_re";  is_Hbb_re_suffix = 1; }
+  if(!is_Hbb_im_prefix){ warning("Hbb_im_prefix","Ham");    Hbb_im_prefix = "Hbb";  is_Hbb_im_prefix = 1; }
+  if(!is_Hbb_im_suffix){ warning("Hbb_im_suffix","_im");    Hbb_im_suffix = "_im";  is_Hbb_im_suffix = 1; }
+
+  if(!is_td_pop){ warning("td_pop","0"); td_pop = 0; is_td_pop = 1; wrn_status++; }
 
   if(!is_Hprime_x_prefix){warning("Hprime_x_prefix","Hprime_x_"); Hprime_x_prefix = "Hprime_x_"; is_Hprime_x_prefix = 1;}
   if(!is_Hprime_y_prefix){warning("Hprime_y_prefix","Hprime_y_"); Hprime_y_prefix = "Hprime_y_"; is_Hprime_y_prefix = 1;}
@@ -182,6 +224,21 @@ InputStructure::InputStructure(boost::python::dict params){
     else if(s1=="Ham_re_suffix"){ Ham_re_suffix = extract<std::string>(params[s1]);  is_Ham_re_suffix = 1; }
     else if(s1=="Ham_im_prefix"){ Ham_im_prefix = extract<std::string>(params[s1]);  is_Ham_im_prefix = 1; }
     else if(s1=="Ham_im_suffix"){ Ham_im_suffix = extract<std::string>(params[s1]);  is_Ham_im_suffix = 1; }
+    
+    else if(s1=="Haa_re_prefix"){ Haa_re_prefix = extract<std::string>(params[s1]);  is_Haa_re_prefix = 1; }
+    else if(s1=="Haa_re_suffix"){ Haa_re_suffix = extract<std::string>(params[s1]);  is_Haa_re_suffix = 1; }
+    else if(s1=="Haa_im_prefix"){ Haa_im_prefix = extract<std::string>(params[s1]);  is_Haa_im_prefix = 1; }
+    else if(s1=="Haa_im_suffix"){ Haa_im_suffix = extract<std::string>(params[s1]);  is_Haa_im_suffix = 1; }
+
+    else if(s1=="Hab_re_prefix"){ Hab_re_prefix = extract<std::string>(params[s1]);  is_Hab_re_prefix = 1; }
+    else if(s1=="Hab_re_suffix"){ Hab_re_suffix = extract<std::string>(params[s1]);  is_Hab_re_suffix = 1; }
+    else if(s1=="Hab_im_prefix"){ Hab_im_prefix = extract<std::string>(params[s1]);  is_Hab_im_prefix = 1; }
+    else if(s1=="Hab_im_suffix"){ Hab_im_suffix = extract<std::string>(params[s1]);  is_Hab_im_suffix = 1; }
+
+    else if(s1=="Hbb_re_prefix"){ Hbb_re_prefix = extract<std::string>(params[s1]);  is_Hbb_re_prefix = 1; }
+    else if(s1=="Hbb_re_suffix"){ Hbb_re_suffix = extract<std::string>(params[s1]);  is_Hbb_re_suffix = 1; }
+    else if(s1=="Hbb_im_prefix"){ Hbb_im_prefix = extract<std::string>(params[s1]);  is_Hbb_im_prefix = 1; }
+    else if(s1=="Hbb_im_suffix"){ Hbb_im_suffix = extract<std::string>(params[s1]);  is_Hbb_im_suffix = 1; }
 
     else if(s1=="Hprime_x_prefix"){ Hprime_x_prefix = extract<std::string>(params[s1]); is_Hprime_x_prefix = 1; }
     else if(s1=="Hprime_y_prefix"){ Hprime_y_prefix = extract<std::string>(params[s1]); is_Hprime_y_prefix = 1; }
@@ -197,6 +254,7 @@ InputStructure::InputStructure(boost::python::dict params){
 //    else if(s1=="nac_im_suffix"){ nac_im_suffix = extract<std::string>(params[s1]);  is_nac_im_suffix = 1; }
 //    else if(s1=="overlap_re_prefix"){ overlap_re_prefix = extract<std::string>(params[s1]);  is_overlap_re_prefix = 1; }
 //    else if(s1=="overlap_re_suffix"){ overlap_re_suffix = extract<std::string>(params[s1]);  is_overlap_re_suffix = 1; }
+    else if(s1=="td_pop"){ td_pop = extract<int>(params[s1]); is_td_pop = 1; }
     else if(s1=="energy_in_one_file"){ energy_in_one_file = extract<std::string>(params[s1]); is_energy_in_one_file = 1; }
     else if(s1=="scratch_dir"){ scratch_dir = extract<std::string>(params[s1]); is_scratch_dir = 1; }
 
@@ -236,6 +294,30 @@ InputStructure::InputStructure(boost::python::dict params){
 }
 
 void InputStructure::sanity_check(){
+  
+  // how to treat alpha and beta spins
+  if(alp_bet==0 || alp_bet==1){ ;; }
+  else{
+	cout<<"Error: alp_bet = "<<alp_bet<<" is not known\n";
+	cout<<"Allowed values are:\n";
+	cout<<"        0    -  alpha and beta spins are not coupled\n";
+	cout<<"        1    -  alpha and beta spins are coupled to each other\n";
+    cout<<"Exiting...\n";
+    exit(0);
+    }
+
+  // whether to out time-dependent population ci^*cj
+  if(td_pop==0 || td_pop==1){ ;; }
+  else{
+    cout<<"Error: td_pop = "<<td_pop<<" is not known\n";
+    cout<<"Allowed values are:\n";
+    cout<<"        0    -  don't output time-dependent population Ci^*Cj\n";
+    cout<<"        1    -  output time-dependent population Ci^*Cj\n";
+    cout<<"Exiting...\n";
+    exit(0);
+    }
+
+
 
   // Regression mode
   if(regress_mode==0 || regress_mode==1){ ;; }
@@ -298,6 +380,9 @@ void InputStructure::sanity_check(){
     if(decoherence>0){
       cout<<"Error: Field is not yet implemented with decoherence\nExiting...\n"; exit(0);
     }
+    if(alp_bet==1){
+	  cout<<"Error: Field is not yet tested with spin-diabatic basis\nExiting...\n"; exit(0); 
+	}
     if(is_field_dir){
       if(field_dir=="x"||field_dir=="y"||field_dir=="z"||
          field_dir=="xy"||field_dir=="xz"||field_dir=="yz"||field_dir=="xyz"

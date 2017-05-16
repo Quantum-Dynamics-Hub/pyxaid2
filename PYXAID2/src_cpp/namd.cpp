@@ -1,4 +1,5 @@
 /***********************************************************
+ * Copyright (C) 2013-2016 Alexey V. Akimov
  * Copyright (C) 2017 Wei Li and Alexey V. Akimov
  * This file is distributed under the terms of the
  * GNU General Public License as published by the

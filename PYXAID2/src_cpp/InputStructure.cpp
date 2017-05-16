@@ -1,4 +1,5 @@
 /***********************************************************
+ * Copyright (C) 2013-2016 Alexey V. Akimov
  * Copyright (C) 2017 Wei Li and Alexey V. Akimov
  * This file is distributed under the terms of the
  * GNU General Public License as published by the
@@ -303,18 +304,18 @@ void InputStructure::sanity_check(){
 	cout<<"        1    -  alpha and beta spins are coupled to each other\n";
     cout<<"Exiting...\n";
     exit(0);
-	}
+    }
 
   // whether to out time-dependent population ci^*cj
   if(td_pop==0 || td_pop==1){ ;; }
   else{
-	cout<<"Error: td_pop = "<<td_pop<<" is not known\n";
-	cout<<"Allowed values are:\n";
-	cout<<"        0    -  don't output time-dependent population Ci^*Cj\n";
-	cout<<"        1    -  output time-dependent population Ci^*Cj\n";
+    cout<<"Error: td_pop = "<<td_pop<<" is not known\n";
+    cout<<"Allowed values are:\n";
+    cout<<"        0    -  don't output time-dependent population Ci^*Cj\n";
+    cout<<"        1    -  output time-dependent population Ci^*Cj\n";
     cout<<"Exiting...\n";
     exit(0);
-	}
+    }
 
 
 

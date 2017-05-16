@@ -109,9 +109,9 @@ int namd(boost::python::dict inp_params){
       
       if(params.debug_flag==1){ 
           cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl;
-		  cout<<"Reading Haa file(real part) = "<<Haa_re_file<<endl;
-		  cout<<"Reading Hab file(real part) = "<<Hab_re_file<<endl;
-		  cout<<"Reading Hbb file(real part) = "<<Hbb_re_file<<endl;
+          cout<<"Reading Haa file(real part) = "<<Haa_re_file<<endl;
+          cout<<"Reading Hab file(real part) = "<<Hab_re_file<<endl;
+          cout<<"Reading Hbb file(real part) = "<<Hbb_re_file<<endl;
 		   }
 
       
@@ -448,7 +448,7 @@ int namd(boost::python::dict inp_params){
               oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Haa.M[k1*numstates+k2];
               oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hbb.M[k1*numstates+k2];
 			  
-		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
+              oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
               oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hab.M[k1*numstates+k2]; 
               
 

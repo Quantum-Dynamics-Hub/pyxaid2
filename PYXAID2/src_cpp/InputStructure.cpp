@@ -295,13 +295,12 @@ InputStructure::InputStructure(boost::python::dict params){
 void InputStructure::sanity_check(){
   
   // how to treat alpha and beta spins
-  if(alp_bet==0 || alp_bet==1 || alp_bet==2){ ;; }
+  if(alp_bet==0 || alp_bet==1){ ;; }
   else{
 	cout<<"Error: alp_bet = "<<alp_bet<<" is not known\n";
 	cout<<"Allowed values are:\n";
 	cout<<"        0    -  alpha and beta spins are not coupled\n";
-	cout<<"        1    -  don't care about spins, only orbitals matter\n";
-	cout<<"        2    - alpha and beta spins are coupled to each other\n";
+	cout<<"        1    -  alpha and beta spins are coupled to each other\n";
     cout<<"Exiting...\n";
     exit(0);
 	}
@@ -311,8 +310,8 @@ void InputStructure::sanity_check(){
   else{
 	cout<<"Error: td_pop = "<<td_pop<<" is not known\n";
 	cout<<"Allowed values are:\n";
-	cout<<"        0    -  don't output time-dependent population\n";
-	cout<<"        1    -  output time-dependent population\n";
+	cout<<"        0    -  don't output time-dependent population Ci^*Cj\n";
+	cout<<"        1    -  output time-dependent population Ci^*Cj\n";
     cout<<"Exiting...\n";
     exit(0);
 	}
@@ -380,7 +379,7 @@ void InputStructure::sanity_check(){
     if(decoherence>0){
       cout<<"Error: Field is not yet implemented with decoherence\nExiting...\n"; exit(0);
     }
-    if(alp_bet==2){
+    if(alp_bet==1){
 	  cout<<"Error: Field is not yet tested with spin-diabatic basis\nExiting...\n"; exit(0); 
 	}
     if(is_field_dir){

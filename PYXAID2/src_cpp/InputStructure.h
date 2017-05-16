@@ -81,7 +81,11 @@ public:
   int alp_bet;      int is_alp_bet;        // coupling between alpha and beta chanels, 1 - yes, 0 - no
   int decoherence;  int is_decoherence;    // choose the decoherence method to use; 0 - no decoherence
   int regress_mode; int is_regress_mode;   // regression mode used during dephasing times calculations
-  int td_pop;       int is_td_pop;         //whether to output time-dependent population
+  int td_pop;       int is_td_pop;         // whether to output time-dependent population Ci^*Cj, 1 - yes, 0 - no
+                                           // the diagonal elements are the state population, the off diagonal elements are the coherences
+                                           // it is basically a N*N complex matrix, with N is the number of desired SDs
+                                           // the outputs contain the population (real of imag parts) at every time for 
+                                           // different initial condition
 
   // Electromagnetic field
   int is_field;             int is_is_field;       // flag to include explicit field

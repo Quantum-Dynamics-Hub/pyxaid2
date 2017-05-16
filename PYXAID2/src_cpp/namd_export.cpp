@@ -108,7 +108,7 @@ int namd(boost::python::dict inp_params){
       std::string Hbb_re_file; Hbb_re_file = params.Hbb_re_prefix + int2str(j) + params.Hbb_re_suffix;
       
       if(params.debug_flag==1){ 
-	      cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl;
+          cout<<"Reading Hamiltonian file(real part) = "<<Ham_re_file<<endl;
 		  cout<<"Reading Haa file(real part) = "<<Haa_re_file<<endl;
 		  cout<<"Reading Hab file(real part) = "<<Hab_re_file<<endl;
 		  cout<<"Reading Hbb file(real part) = "<<Hbb_re_file<<endl;
@@ -137,8 +137,8 @@ int namd(boost::python::dict inp_params){
       if(params.debug_flag==1){ 
           cout<<"Reading Hamiltonian file(imaginary part) = "<<Ham_im_file<<endl;
           cout<<"Reading Haa file(imaginary part) = "<<Haa_im_file<<endl;
-		  cout<<"Reading Hab file(imaginary part) = "<<Hab_im_file<<endl;
-		  cout<<"Reading Hbb file(imaginary part) = "<<Hbb_im_file<<endl;
+          cout<<"Reading Hab file(imaginary part) = "<<Hab_im_file<<endl;
+          cout<<"Reading Hbb file(imaginary part) = "<<Hbb_im_file<<endl;
 		  }
 		  
       file2matrix(Ham_im_file,Ham_im);
@@ -425,8 +425,8 @@ int namd(boost::python::dict inp_params){
 
             if(params.alp_bet==0){ // Electrons with a spin, no coupling between alp and bet, default
 
-		      oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
-		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
+              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
+              oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
 
               oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
               oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = 0.0;
@@ -442,34 +442,18 @@ int namd(boost::python::dict inp_params){
 
 
             }
-            else if(params.alp_bet==1){ // Spinless electrons, coupling between alp and bet is !=0, based only
-                                        // on spatial part of the wavefunctions
+            else if(params.alp_bet==1){ //  coupling between alp and bet is !=0, due to the electronic Ham term via SOC
+				                        // field with alp_bet ==1 is not tested
                                         
-              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Hij.M[k1*numstates+k2];
-		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
-		      
-              oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
-              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hij.M[k1*numstates+k2];
-              
-              oe_es[t].Hprimex->M[(2*k1+1)*(2*numstates)+2*k2] =
-              oe_es[t].Hprimex->M[2*k1*(2*numstates)+2*k2+1] = Hij_prime_x.M[k1*numstates+k2];
-
-              oe_es[t].Hprimey->M[(2*k1+1)*(2*numstates)+2*k2] =
-              oe_es[t].Hprimey->M[2*k1*(2*numstates)+2*k2+1] = Hij_prime_y.M[k1*numstates+k2];
-
-              oe_es[t].Hprimez->M[(2*k1+1)*(2*numstates)+2*k2] =
-              oe_es[t].Hprimez->M[2*k1*(2*numstates)+2*k2+1] = Hij_prime_z.M[k1*numstates+k2];
-		  }
-
-            else if(params.alp_bet==2){//the transition dipole was not calculated in alp_bet==2
-			
-			  oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Haa.M[k1*numstates+k2];
-			  oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hbb.M[k1*numstates+k2];
+              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2] = Haa.M[k1*numstates+k2];
+              oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2+1] = Hbb.M[k1*numstates+k2];
 			  
 		      oe_es[t].Hcurr->M[(2*k1+1)*(2*numstates)+2*k2] = 
-              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hab.M[k1*numstates+k2];     
-			}
-			
+              oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hab.M[k1*numstates+k2]; 
+              
+
+		  }
+
             
           }// for k2
         }// for k1

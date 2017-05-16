@@ -1056,7 +1056,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 		  out3 << endl;
 		  out4 << endl;
 	  }
-	 out3.close();
+     out3.close();
      out4.close();
 	}
          

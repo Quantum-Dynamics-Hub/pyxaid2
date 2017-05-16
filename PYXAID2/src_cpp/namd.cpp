@@ -1,5 +1,6 @@
 /***********************************************************
- * Copyright (C) 2013 Alexey V. Akimov
+ * Copyright (C) 2013-2016 Alexey V. Akimov
+ * Copyright (C) 2017 Wei Li and Alexey V. Akimov
  * This file is distributed under the terms of the
  * GNU General Public License as published by the
  * Free Software Foundation; either version 3 of the
@@ -559,8 +560,8 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
   // Some parameters
   int i,j,n;
-  std::string outfile1,outfile2;
-  ofstream out1,out2;
+  std::string outfile1,outfile2,outfile3,outfile4;
+  ofstream out1,out2,out3,out4;
   int nel = is.nucl_dt/is.elec_dt; // Number of electronic iterations per 1 nuclear
   int sz = me_es.size();           // Number of nuclear iterations (ionic steps)
   int nst = me_es[0].num_states;   // Number of electronic states
@@ -580,6 +581,12 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
   vector<vector<double> > d2E_av(nst,vector<double>(nst,0.0)); // average fluctuation of i-j pair
   vector<vector<vector<double> > > d2E(sz,vector<vector<double> >(nst,vector<double>(nst,0.0)));//fluctuation
   CMATRIX rates(nst,nst);
+
+  vector<CMATRIX> sumCij;
+  for(int k = 0; k < sz; k++){
+	  CMATRIX tmp1(nst, nst);
+	  sumCij.push_back(tmp1);
+  }
 
   if(is.decoherence>0){
     cout<<"Reading decoherence rate matrix for this initial condition...\n";
@@ -1006,7 +1013,9 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
       // Accumulate SE and SH probabilities for all states
       sh_pops[i][curr_state] += 1.0;
       for(j=0;j<nst;j++){ se_pops[i][j] += me_es[i].A->M[j*nst+j].real(); }
-
+      if(is.td_pop==1){
+	      sumCij[i] +=(*(me_es[i].A));
+      }
     }// namdtime
   }// for num_sh_traj
 
@@ -1032,6 +1041,26 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
       sh_pops[i][j] /= ((double)is.num_sh_traj);
       out2<<"P("<<j<<")= "<<setprecision(10)<<sh_pops[i][j]<<" ";
     } out2<<endl;
+    
+    //------- time-dependent population Cij -----------
+    if(is.td_pop==1){
+      outfile3 = is.scratch_dir+"/Cij_re_t"+int2str(i)+"_i"+int2str(icond);
+      outfile4 = is.scratch_dir+"/Cij_im_t"+int2str(i)+"_i"+int2str(icond);
+      out3.open(outfile3.c_str(),ios::out);
+      out4.open(outfile4.c_str(),ios::out);
+      sumCij[i] = sumCij[i] / is.num_sh_traj;
+      for(int i1 = 0; i1 < nst; i1++){
+		  for(int j1 = 0; j1 < nst; j1++){
+			  out3<<setprecision(10)<<sumCij[i].M[i1*nst+j1].real()<<"   ";
+			  out4<<setprecision(10)<<sumCij[i].M[i1*nst+j1].imag()<<"   ";
+		  }
+		  out3 << endl;
+		  out4 << endl;
+	  }
+     out3.close();
+     out4.close();
+	}
+         
   }
 
   out1.close();

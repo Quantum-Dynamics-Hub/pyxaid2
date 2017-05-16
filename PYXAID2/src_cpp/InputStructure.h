@@ -1,5 +1,6 @@
 /***********************************************************
- * Copyright (C) 2013 Alexey V. Akimov
+ * Copyright (C) 2013-2016 Alexey V. Akimov
+ * Copyright (C) 2017 Wei Li and Alexey V. Akimov
  * This file is distributed under the terms of the
  * GNU General Public License as published by the
  * Free Software Foundation; either version 3 of the
@@ -29,6 +30,21 @@ public:
   std::string Ham_re_suffix;    int is_Ham_re_suffix;
   std::string Ham_im_prefix;    int is_Ham_im_prefix;
   std::string Ham_im_suffix;    int is_Ham_im_suffix;
+  
+  std::string Haa_re_prefix;    int is_Haa_re_prefix;
+  std::string Haa_re_suffix;    int is_Haa_re_suffix;
+  std::string Haa_im_prefix;    int is_Haa_im_prefix;
+  std::string Haa_im_suffix;    int is_Haa_im_suffix;
+  
+  std::string Hab_re_prefix;    int is_Hab_re_prefix;
+  std::string Hab_re_suffix;    int is_Hab_re_suffix;
+  std::string Hab_im_prefix;    int is_Hab_im_prefix;
+  std::string Hab_im_suffix;    int is_Hab_im_suffix;
+  
+  std::string Hbb_re_prefix;    int is_Hbb_re_prefix;
+  std::string Hbb_re_suffix;    int is_Hbb_re_suffix;
+  std::string Hbb_im_prefix;    int is_Hbb_im_prefix;
+  std::string Hbb_im_suffix;    int is_Hbb_im_suffix;
 
   // only real components are non-zero, so below files are for _re
   std::string Hprime_x_prefix;  int is_Hprime_x_prefix;
@@ -66,6 +82,11 @@ public:
   int alp_bet;      int is_alp_bet;        // coupling between alpha and beta chanels, 1 - yes, 0 - no
   int decoherence;  int is_decoherence;    // choose the decoherence method to use; 0 - no decoherence
   int regress_mode; int is_regress_mode;   // regression mode used during dephasing times calculations
+  int td_pop;       int is_td_pop;         // whether to output time-dependent population Ci^*Cj, 1 - yes, 0 - no
+                                           // the diagonal elements are the state population, the off diagonal elements are the coherences
+                                           // it is basically a N*N complex matrix, with N is the number of desired SDs
+                                           // the outputs contain the population (real of imag parts) at every time for 
+                                           // different initial condition
 
   // Electromagnetic field
   int is_field;             int is_is_field;       // flag to include explicit field

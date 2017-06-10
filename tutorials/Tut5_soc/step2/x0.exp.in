@@ -1,0 +1,10 @@
+&inputpp
+  prefix = 'x0',
+  outdir = './',
+  pseudo_dir = '/user/alexeyak/Programming/pyxaid-code/tutorials/Tut5_soc/step1/',
+  psfile(1) = 'Ga.rel-revpbe-dn-rrkjus_psl.0.2.UPF',
+  psfile(2) = 'Sb.rel-revpbe-n-rrkjus_psl.0.3.1.UPF',
+  single_file = .FALSE.,
+  ascii = .TRUE.,
+  uspp_spsi = .FALSE.,
+/

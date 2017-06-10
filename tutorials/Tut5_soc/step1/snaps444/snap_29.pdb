@@ -1,0 +1,13 @@
+CRYST1    6.119    6.119    6.119  90.00  90.00  90.00 P 1           1
+ATOM      1   Ga MOL M   1      -0.011  -0.018   0.003  1.00  0.00      XYZ1Ga  
+ATOM      2   Ga MOL M   1       3.058   3.056  -0.007  1.00  0.00      XYZ1Ga  
+ATOM      3   Ga MOL M   1       3.055  -0.008   3.049  1.00  0.00      XYZ1Ga  
+ATOM      4   Ga MOL M   1       0.020   3.054   3.075  1.00  0.00      XYZ1Ga  
+ATOM      5   Sb MOL M   1       1.526   1.521   1.534  1.00  0.00      XYZ1Sb  
+ATOM      6   Sb MOL M   1       1.532   1.535   4.579  1.00  0.00      XYZ1Sb  
+ATOM      7   Sb MOL M   1       1.516   4.591   1.532  1.00  0.00      XYZ1Sb  
+ATOM      8   Sb MOL M   1       4.589   1.527   1.524  1.00  0.00      XYZ1Sb  
+ATOM      9   Sb MOL M   1       4.593   4.588   1.527  1.00  0.00      XYZ1Sb  
+ATOM     10   Sb MOL M   1       1.555   4.600   4.590  1.00  0.00      XYZ1Sb  
+ATOM     11   Sb MOL M   1       4.583   1.539   4.595  1.00  0.00      XYZ1Sb  
+ATOM     12   Sb MOL M   1       4.580   4.596   4.593  1.00  0.00      XYZ1Sb  

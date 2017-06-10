@@ -1,0 +1,56 @@
+&CONTROL
+  calculation = 'scf',
+  dt = 20.67055,
+  nstep = 50,
+  pseudo_dir = '/user/alexeyak/Programming/pyxaid-code/tutorials/Tut5_soc/step1/',
+  outdir = './',
+  prefix = 'x0',
+  disk_io = 'low',
+  wf_collect = .true.
+/
+
+&SYSTEM
+  ibrav = 0,
+  celldm(1) = 1.89,
+  nat = 12,
+  ntyp = 2,
+  !nspin = 4,
+  nbnd = 100,
+  ecutwfc = 50,
+  tot_charge = 0.0,
+  starting_magnetization(2) = 0.00,
+  occupations = 'smearing',
+  smearing = 'gaussian',
+  degauss = 0.005,
+  nosym = .true.,
+  lspinorb=.true.,
+  noncolin = .false.,
+/
+
+&ELECTRONS
+  electron_maxstep = 300,
+  conv_thr = 1.D-5,
+  mixing_beta = 0.45,
+/
+
+&IONS
+  ion_dynamics = 'verlet',
+  ion_temperature = 'andersen',
+  tempw = 300.00 ,
+  nraise = 1,
+/
+
+
+ATOMIC_SPECIES
+ Ga  69.723   Ga.rel-revpbe-dn-rrkjus_psl.0.2.UPF
+ Sb  121.760  Sb.rel-revpbe-n-rrkjus_psl.0.3.1.UPF
+
+
+K_POINTS automatic
+1 1 1 0 0 0
+                               
+CELL_PARAMETERS
+     6.1180000    0.0000000    0.0000000
+     0.0000000    6.1180000    0.0000000
+     0.0000000    0.0000000    6.1180000
+ 

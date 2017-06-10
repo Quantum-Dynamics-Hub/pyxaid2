@@ -1,0 +1,69 @@
+&CONTROL
+  calculation = 'md',
+  dt = 20.67055,
+  nstep = 50,
+  pseudo_dir = './',
+  outdir = './',
+  prefix = 'x',
+  disk_io = 'low',
+/
+
+&SYSTEM
+  ibrav = 0,
+  celldm(1) = 1.89,
+  nat = 12,
+  ntyp = 2,
+  !nspin = 4,
+  nbnd = 100,
+  ecutwfc = 50,
+  tot_charge = 0.0,
+  starting_magnetization(2) = 0.00,
+  occupations = 'smearing',
+  smearing = 'gaussian',
+  degauss = 0.005,
+  nosym = .true.,
+  lspinorb=.true.,
+  noncolin = .true.,
+/
+
+&ELECTRONS
+  electron_maxstep = 300,
+  conv_thr = 1.D-5,
+  mixing_beta = 0.45,
+/
+
+&IONS
+  ion_dynamics = 'verlet',
+  ion_temperature = 'andersen',
+  tempw = 300.00 ,
+  nraise = 1,
+/
+
+
+ATOMIC_SPECIES
+ Ga  69.723   Ga.rel-revpbe-dn-rrkjus_psl.0.2.UPF
+ Sb  121.760  Sb.rel-revpbe-n-rrkjus_psl.0.3.1.UPF
+
+
+K_POINTS automatic
+4 4 4 0 0 0
+                               
+CELL_PARAMETERS
+     6.1180000    0.0000000    0.0000000
+     0.0000000    6.1180000    0.0000000
+     0.0000000    0.0000000    6.1180000
+ 
+ATOMIC_POSITIONS (alat)
+Ga	         0.00000	         0.00000	         0.00000
+Ga	         3.05900	         3.05900	         0.00000
+Ga	         3.05900	         0.00000	         3.05900
+Ga	         0.00000	         3.05900	         3.05900
+Sb	         1.52950	         1.52950	         1.52950
+Sb	         1.52950	         1.52950	         4.58850
+Sb	         1.52950	         4.58850	         1.52950
+Sb	         4.58850	         1.52950	         1.52950
+Sb	         4.58850	         4.58850	         1.52950
+Sb	         1.52950	         4.58850	         4.58850
+Sb	         4.58850	         1.52950	         4.58850
+Sb	         4.58850	         4.58850	         4.58850
+

@@ -1,0 +1,7 @@
+SLURM_JOBID=859349
+SLURM_JOB_NODELIST=cpn-p27-30
+SLURM_NNODES=1
+SLURMTMPDIR=/scratch/859349
+working directory=/user/alexeyak/Programming/pyxaid-code/tutorials/Tut5_soc/step1
+NPROCS=12
+All Done!

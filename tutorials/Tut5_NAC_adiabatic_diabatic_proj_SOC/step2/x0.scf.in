@@ -1,0 +1,58 @@
+&CONTROL
+  calculation = 'scf',
+  dt = 20.67055,
+  nstep = 50,
+  !pseudo_dir = '/home/eric/PROJECT/Alexey2/pure/step2/PP',
+  pseudo_dir = '/user/alexeyak/Programming/pyxaid2-code/tutorials/Tut5_NAC_adiabatic_diabatic_proj_SOC/step2/PP',
+  outdir = './',
+  prefix = 'x0',
+  disk_io = 'low',
+  wf_collect = .true.
+/
+
+&SYSTEM
+  ibrav = 0,
+  celldm(1) = 1.89,
+  nat = 12,
+  ntyp = 3,
+  !nspin = 2,
+  nbnd = 120,
+  ecutwfc = 50,
+  tot_charge = 0.0,
+  starting_magnetization(2) = 0.00,
+  occupations = 'smearing',
+  smearing = 'gaussian',
+  degauss = 0.005,
+  nosym = .true.,
+  lspinorb=.true.,
+  noncolin = .true.,
+/
+
+&ELECTRONS
+  electron_maxstep = 300,
+  conv_thr = 1.D-5,
+  mixing_beta = 0.45,
+/
+
+&IONS
+  ion_dynamics = 'verlet',
+  ion_temperature = 'andersen',
+  tempw = 300.00 ,
+  nraise = 1,
+/
+
+
+ATOMIC_SPECIES
+ In  114.818   In.rel-pbe-dn-rrkjus_psl.0.2.2.UPF
+ Ga   69.723   Ga.rel-pbe-dn-rrkjus_psl.0.2.UPF
+ As   74.921   As.rel-pbe-n-rrkjus_psl.0.2.UPF
+
+
+K_POINTS automatic
+1 1 1 0 0 0
+     
+CELL_PARAMETERS
+     6.530543   0.000000   0.000000
+     0.000000   6.530545   0.000000
+     0.000000   0.000000   6.585806
+ 

@@ -315,6 +315,11 @@ void Efield(InputStructure& is,double t, CMATRIX& E,double& Eex){
 
 
 void propagate_electronic(InputStructure& is,vector<ElectronicStructure>& es,int i, CMATRIX& rates){
+  // Propagate coefficients of all adiabatic states
+  // Accumulate the surface hopping probabilities for a given nuclear step
+  // Yes, we do not make the hops after each electronic step (elec_dt), but
+  // The each step contributes to the overall hopping probability (we integrate it
+  // over the duration of the nuclear timestep)
 
   int nel = is.nucl_dt/is.elec_dt; // Number of electronic iterations per 1 nuclear
   int sz = es.size();              // Number of nuclear iterations (ionic steps)
@@ -324,130 +329,39 @@ void propagate_electronic(InputStructure& is,vector<ElectronicStructure>& es,int
   
 
   // Propagate coefficients of all adiabatic states
-  //============= Here we are going to support mostly integrator==0 ===========
-  // May be missing some features for integrator != 0
 
-  if(is.integrator==0){
-    for(int j=0;j<nel;j++){ 
-      tim = (i*is.nucl_dt + j*is.elec_dt);
-      // Compute field
-      Efield(is,tim,Ef,Eex);
+  // Loop over electronic timesteps withing a single nuclear step
+  for(int j=0;j<nel;j++){ 
 
-      // Propagate coefficients
+    // Absolute time
+    tim = (i*is.nucl_dt + j*is.elec_dt);
+
+    // Compute field
+    Efield(is,tim,Ef,Eex);
+
+    // Propagate coefficients
+    if(is.integrator==0){   
       if(is.decoherence==5){   es[i].propagate_coefficients( is.elec_dt,Ef,rates);      } // CPF
       else{                    es[i].propagate_coefficients( is.elec_dt,Ef );       }
-
-      // Update time
-      es[i].t_m[0] += is.elec_dt; 
-
-      // Update hopping probabilities
-      if(is.sh_algo==0){ es[i].update_hop_prob_fssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==1){  es[i].update_hop_prob_gfsh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==2){  es[i].update_hop_prob_mssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-
-
-    }// for j
-  }
-
-  else if(is.integrator==10){
-    // 3 ways to approximate slope of the H matrix
-    if(i==0){  *es[i].dHdt = (*es[i+1].Hcurr - *es[i].Hcurr)/is.nucl_dt ; }
-    else if(i>0 && i<(sz-1)){  *es[i].dHdt = 0.5*(*es[i+1].Hcurr-*es[i-1].Hcurr)/is.nucl_dt; }
-    else if(i==(sz-1)) { *es[i].dHdt = (*es[i].Hcurr - *es[i-1].Hcurr)/is.nucl_dt; }
-    // Now propagate coefficients
-    for(int j=0;j<nel;j++){
-      int opt=2; if(i==0 && j==0){ opt = 1; }
-      tim = (i*is.nucl_dt + j*is.elec_dt);
-      Efield(is,tim,Ef,Eex);
-      es[i].propagate_coefficients1(is.elec_dt,opt,Ef);
-
-      // Update hopping probabilities
-      if(is.sh_algo==0){ es[i].update_hop_prob_fssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==1){  es[i].update_hop_prob_gfsh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==2){  es[i].update_hop_prob_mssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-                         
     }
-  }
-  else if(is.integrator==11){
-    // 2 ways to approximate slope of the H matrix
-    if(i<(sz-1)){  *es[i].dHdt = (*es[i+1].Hcurr-*es[i].Hcurr)/is.nucl_dt; }
-    else if(i==(sz-1)) { *es[i].dHdt = (*es[i].Hcurr - *es[i-1].Hcurr)/is.nucl_dt; }
-    // Now propagate coefficients
-    for(int j=0;j<nel;j++){
-      int opt=2; if(i==0 && j==0){ opt = 1; }
-      tim = (i*is.nucl_dt + j*is.elec_dt);
-      Efield(is,tim,Ef,Eex);
-      es[i].propagate_coefficients1(is.elec_dt,opt,Ef);
-
-      // Update hopping probabilities 
-      if(is.sh_algo==0){ es[i].update_hop_prob_fssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==1){  es[i].update_hop_prob_gfsh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==2){  es[i].update_hop_prob_mssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-
-    }
-  }
-  else if(is.integrator==2){
-    for(int j=0;j<nel;j++){ 
-      tim = (i*is.nucl_dt + j*is.elec_dt);
-      Efield(is,tim,Ef,Eex);
+    else if(is.integrator==2){
+      if(is.decoherence==5){ cout<<"Error: CPF is not available with the integrator=2\nExiting...\n"; exit(0); }
       es[i].propagate_coefficients2(is.elec_dt,Ef);
-
-      // Update hopping probabilities
-      if(is.sh_algo==0){ es[i].update_hop_prob_fssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==1){  es[i].update_hop_prob_gfsh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-      else if(is.sh_algo==2){  es[i].update_hop_prob_mssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
-
-    }//j
-  }
-
-}
-
-void solve_electronic(InputStructure& is,vector<ElectronicStructure>& es, CMATRIX& rates){
-
-  int sz = es.size();              // Number of nuclear iterations (ionic steps)
-
-  //>>>>> Stage 1: Propagate orbitals (coefficients) and compute hopping probabilities
-  for(int i=0;i<sz;i++){     // Nuclear iterations - MD trajectory length
-
-    if(i>0){   es[i] << es[i-1]; }
-    es[i].init_hop_prob1();
-    propagate_electronic(is,es,i,rates); // it also updates the hopping probabilities
-
-/* Debug
-        cout<<"hop_matrix:\n";
-        for(int a=0;a<es[i].num_states;a++){
-          for(int b=0;b<es[i].num_states;b++){
-             cout<<es[i].g[a*es[i].num_states+b]<<"  ";
-          }
-          cout<<endl;
-        }
-*/
-
-
-//    es[i].update_populations();
-    // Calculate the probabilities off all states and hopping probabilities
-//    es[i].update_hop_prob(is.nucl_dt,is.boltz_flag,is.Temp);
-
-    // Printing information
-    if(is.debug_flag==1){
-      // Printing debugging information
-      cout<<"After namd nuclear iteration "<<i<<" populations of all considered states are:"<<endl;
-      for(int j=0;j<es[i].num_states;j++){
-        for(int k=0;k<es[i].num_states;k++){
-          cout<<"a("<<j<<","<<k<<") = "<<es[i].A->M[j*es[i].num_states+k].real()<<" + "<<es[i].A->M[j*es[i].num_states+k].imag()<<"i"<<" ";
-        }
-        cout<<endl;
-      }
-      cout<<"Hopping probabilities:\n";
-      for(j=0;j<es[i].num_states;j++){ cout<<"P( "<<es[i].curr_state<<" --> "<<j<<" )= "<<setprecision(10)<<es[i].g[es[i].curr_state*es[i].num_states+j]<<endl; }
-      cout<<"Coefficients: \n";
-      double norm = 0.0;
-      for(j=0;j<es[i].num_states;j++){ cout<<"c["<<j<<"] = "<<es[i].Ccurr->M[j].real()<<" + "<<es[i].Ccurr->M[j].imag()<<"i \n"; norm += (conj(es[i].Ccurr->M[j])*es[i].Ccurr->M[j]).real(); }
-      cout<<"Norm = "<<norm<<endl;
     }
 
-  }// for i
+    // Update time
+    es[i].t_m[0] += is.elec_dt; 
+
+    // Update hopping probabilities
+    if(is.sh_algo==0){ es[i].update_hop_prob_fssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
+    else if(is.sh_algo==1){  es[i].update_hop_prob_gfsh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
+    else if(is.sh_algo==2){  es[i].update_hop_prob_mssh(is.elec_dt,is.boltz_flag,is.Temp,Ef,Eex,rates);  }
+
+  }// for j
+
 }
+
+
 
 
 void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond){
@@ -487,70 +401,8 @@ void run_decoherence_rates(InputStructure& is, vector<ElectronicStructure>& me_e
 }
 
 
-void run_namd(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond, Random& rnd){
-  cout<<"Entering run_namd function...\n";
 
-  std::string outfile;
-  ofstream out;
-  int sz = me_es.size();           // Number of nuclear iterations (ionic steps)
-  int nst = me_es[0].num_states;   // Number of electronic states
-  CMATRIX rates(nst,nst);
 
-  //>>>>> Stage 1: Solve electronic problem
-  //if(is.many_electron_algorithm==0){
-    //==================== Propagate many-electron orbitals =====================================
-    solve_electronic(is,me_es,rates); // rates  are not actually used, because this is non-decoherence algorithm
-  //}// algorithm = 0
-
-  // Output populations as a function of time
-  outfile = is.scratch_dir+"/me_pop"+int2str(icond);
-  out.open(outfile.c_str(),ios::out);
-  for(int i=0;i<sz;i++){
-    out<<"time "<<i<<" ";
-    double tot = 0.0;
-    for(int j=0;j<me_es[i].num_states;j++){
-      out<<"P("<<j<<")= "<<setprecision(10)<<me_es[i].A->M[j*me_es[i].num_states+j].real()<<"  ";
-      tot += me_es[i].A->M[j*me_es[i].num_states+j].real();
-    }
-    out<<"Total= "<<tot<<endl;
-  }
-  out.close();
-
-  //>>>>> Stage 2: Now we just run the random walk (surface hopping) with calculated probabilities
-  // Initialize observables
-  int curr_state;
-  double** sh_pops; // sh_pops[t][i] = population at state i at time t
-  sh_pops = new double*[is.namdtime];
-  for(i=0;i<sz;i++){
-    sh_pops[i] = new double[me_es[i].num_states];
-    for(int j=0;j<me_es[i].num_states;j++){  sh_pops[i][j] = 0.0;  }// j
-  }// i
-
-  // Do the hops
-  for(int n=0;n<is.num_sh_traj;n++){
-    curr_state = me_es[0].curr_state;
-    for(i=0;i<sz;i++){
-      hop(me_es[i].g,curr_state,me_es[i].num_states);
-      sh_pops[i][curr_state] += 1.0;
-    }// for namdtime
-  }// num_sh_traj
-
-  outfile = is.scratch_dir+"/out"+int2str(icond);
-  out.open(outfile.c_str(),ios::out);
-  for(i=0;i<sz;i++){
-    out<<"time "<<i<<" ";
-    for(int j=0;j<me_es[0].num_states;j++){
-      sh_pops[i][j] = sh_pops[i][j]/((double)is.num_sh_traj);
-      out<<"P("<<j<<")= "<<setprecision(10)<<sh_pops[i][j]<<" ";
-    }
-    out<<endl;
-  }
-  out.close();
-
-  for(i=0;i<sz;i++){ delete [] sh_pops[i]; }
-  delete [] sh_pops;
-
-}
 
 void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_state>& me_states, int icond, Random& rnd){
 // This version is different from run_namd function in that it does not separate solving TD-SE and computation
@@ -584,8 +436,8 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
 
   vector<CMATRIX> sumCij;
   for(int k = 0; k < sz; k++){
-	  CMATRIX tmp1(nst, nst);
-	  sumCij.push_back(tmp1);
+      CMATRIX tmp1(nst, nst);
+      sumCij.push_back(tmp1);
   }
 
   if(is.decoherence>0){
@@ -603,318 +455,15 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
     rates = CMATRIX(r_ij,z);
 
 
-    if(is.decoherence==2){ // NAC scaling
-
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2str(icond)+".txt";
-      ofstream out(filename.c_str(),ios::out);
-
-      int i,j,t;
-
-      // Compute means
-      for(i=0;i<nst;i++){
-        for(j=0;j<nst;j++){
-          for(t=0;t<sz;t++){
-            E0[i][j] += (me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real());
-          }// for t
-          E0[i][j] /= ((double)sz);
-        }// for j
-      }// for i
-
-      // Compute average fluctuations
-      for(i=0;i<nst;i++){
-        for(j=0;j<nst;j++){
-          for(t=0;t<sz;t++){
-            double de = ((me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real()) - E0[i][j]);
-
-            d2E_av[i][j] += de*de;
-          }// for t
-          d2E_av[i][j] = sqrt(d2E_av[i][j]/((double)sz));
-          
-        }// for j
-      }// for i
-
-
-
-      for(t=0;t<sz;t++){
-
-        out<<"t= "<<t<<"  ";
-        // Scale Hamiltonian (off-diagonal elements)
-        for(i=0;i<nst;i++){
-          for(j=0;j<nst;j++){
-            if(i!=j){
-              // My original version
-//              double dEij = (me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real()) - E0[i][j]; 
-              // Testing Oleg's suggestion
-              double dEij = d2E_av[i][j];
-              double tau = 1000.0; // 1 ps
-              if(rates.M[i*nst+j].real()>0.0){
-                tau = (1.0/rates.M[i*nst+j].real());
-              }
-              double x = 0.5*fabs(dEij * tau / HBAR);
-              double F = (x/sqrt(M_PI)) * exp(-x*x);
-              F = sqrt(F);
-
-              me_es[t].Hcurr->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hprev->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hnext->M[i*nst+j] *= F;  // scale NAC
-
-              out<<" dE("<<i<<","<<j<<")= "<<dEij<<" F= "<<F<<" ";
-            }// i!=j
-          }// for j
-        }// for i
-        out<<endl;
-      }// for t
-      out.close();
-    }//is.decoherence == 2
-
-
-    if(is.decoherence==3){  // NAC scaling - spectral density variant
-
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2str(icond)+".txt";
-      ofstream out(filename.c_str(),ios::out);
-
-      int i,j,t;
-
-      // Compute means
-      for(i=0;i<nst;i++){
-        for(j=0;j<nst;j++){
-          for(t=0;t<sz;t++){
-            E0[i][j] += (me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real()); 
-          }// for t
-          E0[i][j] /= ((double)sz);
-        }// for j
-      }// for i
-     
-      
-      // Read in the spectral density J
-      double dE = 0.0025; // spacing for x (energy) axis for spectral density function = 20 cm^-1
-      int Npoints = 400*5; // cover 5 eV range of energies
-      vector< vector<vector<double> > > J(nst, vector< vector<double> >(nst,vector<double>(Npoints,0.0)));
-
-      for(i=0;i<nst;i++){
-        for(j=0;j<nst;j++){
-          if(i!=j){
-    
-            cout<<"Reading spectral density for this initial condition...\n";
-            std::string filename = is.scratch_dir+"/icond"+int2str(icond)+"pair"+int2str(i)+"_"+int2str(j)+"Spectral_density.txt";
-            cout<<"Expected filename is: "<<filename<<endl;
-
-            ifstream in;
-            in.open(filename.c_str(),ios::in);
-            if(in.is_open()){  cout<<"Reading the input from file "<<filename<<endl; }
-            else{ cout<<"Error: Can not open file "<<filename<<". Check if this file exists\n"; }
-            in.close();
-
-            // Reading spectral density for given pair, storing data in arrays G (gaps) and J (spectral dens.)
-            vector<std::string> lines;
-            vector<double> G(Npoints,0.0);
-            vector<double> J(Npoints,0.0);
-            read_file(filename, 0, lines);
-
-            vector<std::string> line_tokens;
-            double sumJ = 0.0;
-            for(int w=0;w<Npoints;w++){ 
-              split_line(lines[w],line_tokens);
-              G[w] = atof(line_tokens[1].c_str());        
-              J[w] = atof(line_tokens[5].c_str());
-              sumJ += J[w];
-              line_tokens.clear();
-              
-            }// for w
-
-            // Now we are ready to scale the gap for i->j transition for all times
-            for(t=0;t<sz;t++){
-        out<<"t= "<<t<<"  ";
-
-              double dEij = (me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real());
-
-//              int indx = floor((dEij - 0.0)/dE); 
-//              double fra = (dEij - G[indx]);
-
-//              double scl = J[indx] + fra*(J[indx+1] - J[indx])/(G[indx+1] - G[indx]);
-//              double scl = J[indx]/sumJ;  // density of vibronic states at given gap
-              double fluct = (dEij - E0[i][j]);
-              int indx = floor((fabs(fluct)-0.0)/dE);
-              double scl = J[indx]* fluct*fluct/(HBAR*HBAR);
-
-              if(scl<0.0){ scl = 0.0; }
-
-              scl = sqrt(scl);
-
-              me_es[t].Hcurr->M[i*nst+j] *= scl;  // scale NAC
-              me_es[t].Hprev->M[i*nst+j] *= scl;  // scale NAC
-              me_es[t].Hnext->M[i*nst+j] *= scl;  // scale NAC
-
-              out<<" dE("<<i<<","<<j<<")= "<<dEij<<" F= "<<scl<<" ";
-
-        out<<endl;
-            }// for t
-
-
-          }// i!=j
-        }// for j
-      }// for i
-
-      out.close();
-
-
-    }// is.decoherence == 3
-
-    if(is.decoherence==4){ // NAC scaling (decoherence==2) but with extrapolation
-
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2str(icond)+".txt";
-      ofstream out(filename.c_str(),ios::out);
-
-      double maxx = sqrt(0.5);
-      double maxf = exp(-0.25)/pow(2.0*M_PI, 0.25);
-
-      for(int t=0;t<sz;t++){
-
-        out<<"t= "<<t<<"  ";
-        // Scale Hamiltonian (off-diagonal elements)
-        for(int i=0;i<nst;i++){
-          for(int j=0;j<nst;j++){
-            if(i!=j){
-              double dEij = (me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real());
-              double tau = 1000.0; // 1 ps
-              if(rates.M[i*nst+j].real()>0.0){
-                tau = (1.0/rates.M[i*nst+j].real());
-              }
-              // Matyushov's formula
-              //double kb =   8.617e-5;      // units = eV/K
-              double cm_inv = 1.23981e-4;  // 1 cm^-1 in eV
-              double T = 300.0;
-              double kT = kb*T;
-              double omega_v = 2000.0 * cm_inv;  // eV
-
-              
-              double lambda_v = HBAR*HBAR/(kT*tau*tau);
-              double lambda_s = lambda_v; 
-
-              double  S = lambda_v / (HBAR*omega_v);
-              //    print "Huang-Rhys factor = ", S
-
-              double xi_v = HBAR*omega_v/(2.0*kT);
-              //    print "xi_v = ", xi_v
-
-              double prefac = 1.0/sqrt(4.0*M_PI*lambda_s*kT);
-
-              double res = 0.0;
-
-              for(int m=0;m<10;m++){
-
-                double I = 1.0;
-                for(int i=1;i<=m;i++){
-                  I = I * (S/float(i));
-                }             
-                double A_m = exp(-S) * I;
-
-                double x = (fabs(dEij) + m*HBAR*omega_v);
-                res += A_m * exp(-( x*x/(4.0*lambda_s*kT) ) );
-              }
-              res *= prefac;
-
-
-//              double x = fabs(0.5*(dEij * tau / hbar));
-//              double F = sqrt( sqrt(1.0/M_PI) * x * exp(-x*x) );
-              double F = sqrt(res);
-
-//              if(x>maxx){  F = (maxf + (maxf - F))/(2.0*maxf); }
-
-
-              me_es[t].Hcurr->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hprev->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hnext->M[i*nst+j] *= F;  // scale NAC
-
-              out<<" dE("<<i<<","<<j<<")= "<<dEij<<" F= "<<F<<" ";
-            }// i!=j
-          }// for j
-        }// for i
-        out<<endl;
-      }// for t
-      out.close();
-
-
-/*
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2string(icond)+".txt";
-      ofstream out(filename.c_str(),ios::out);
-
-      double maxx = sqrt(0.5);
-      double maxf = exp(-0.25)/pow(2.0*M_PI, 0.25);
-
-      for(int t=0;t<sz;t++){
-
-        out<<"t= "<<t<<"  ";
-        // Scale Hamiltonian (off-diagonal elements)
-        for(int i=0;i<nst;i++){
-          for(int j=0;j<nst;j++){
-            if(i!=j){
-              double dEij = (me_es[t].Hcurr->M[i*nst+i].real() - me_es[t].Hcurr->M[j*nst+j].real());
-              double tau = 1000.0; // 1 ps
-              if(rates.M[i*nst+j].real()>0.0){
-                tau = (1.0/rates.M[i*nst+j].real());
-              }
-              
-              double x = fabs(0.5*(dEij * tau / hbar));  
-              double F = sqrt( sqrt(1.0/M_PI) * x * exp(-x*x) );
-
-              if(x>maxx){  F = (maxf + (maxf - F))/(2.0*maxf); }
-           
-
-              me_es[t].Hcurr->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hprev->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hnext->M[i*nst+j] *= F;  // scale NAC
-
-              out<<" dE("<<i<<","<<j<<")= "<<dEij<<" F= "<<F<<" ";
-            }// i!=j
-          }// for j
-        }// for i
-        out<<endl;
-      }// for t
-      out.close();
-*/
-    }//is.decoherence == 4
-
+    if(is.decoherence==2){ ;; }//is.decoherence == 2 NAC scaling (test method)
+    if(is.decoherence==3){ ;; }//is.decoherence == 3 NAC scaling - spectral density variant (test method)
+    if(is.decoherence==4){ ;; }//is.decoherence == 4 NAC scaling (same as decoherence==2, but with extrapolation) (test method)
     if(is.decoherence==5){ // Coherence Penalty Functional
-     // add nothing special here
-    }
-    
+     // add nothing special here, but something is done elsewhere
+    }    
     if(is.decoherence==6){
     // nothing special:  Reserved for FSSH with wfc collapse - which works fine for ECWR
     }
-
-    if(is.decoherence==7){ // Here goes the NAC scaling that is based on FT and FC factors
-/*
-      std::string filename = is.scratch_dir+"/scaling_factors_icond"+int2string(icond)+".txt";
-      ofstream out(filename.c_str(),ios::out);
-
-      for(int t=0;t<sz;t++){
-
-        out<<"t= "<<t<<"  ";
-        // Scale Hamiltonian (off-diagonal elements)
-        for(int i=0;i<nst;i++){
-          for(int j=0;j<nst;j++){
-            if(i!=j){
-              double tau = 1000.0; // 1 ps
-              if(rates.M[i*nst+j].real()>0.0){
-                tau = (1.0/rates.M[i*nst+j].real());
-              }
-              int wind = tau/is.nucl_dt;
-
-              me_es[t].Hcurr->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hprev->M[i*nst+j] *= F;  // scale NAC
-              me_es[t].Hnext->M[i*nst+j] *= F;  // scale NAC
-
-              out<<" dE("<<i<<","<<j<<")= "<<dEij<<" F= "<<F<<" ";
-            }// i!=j
-          }// for j
-        }// for i
-        out<<endl;
-      }// for t
-      out.close();
-
-*/
-    }// decoherence==7
 
   }// decoherence > 0
 
@@ -922,6 +471,7 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
   // need such an array, initially containing identical entries. Unfortunately this means the memory requirement
   // will increase num_sh_traj_times (hopefully in the future I will optimize such a structure, because the 
   // Hamiltonian(biggest chunk of the memory requirement) is the same everywhere), but for now will do kinda brute force
+
   /*
   vector<vector<ElectronicStructure> > ME_ES;
   for(int n=0;n<is.num_sh_traj;n++){ 
@@ -932,7 +482,8 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
   */
   // Ok. Now, instead of the memory-extensive method we use the following trick:
   // The initial state and coefficients remain unchanged, so we can use the me_es strait away
-  // Only we need to make coupule 2D arrays to store results.
+  // Only we need to make a couple of 2D arrays to store the results.
+
 
   //==================== Propagate many-electron orbitals =====================================
   // The outer loop (which calls run_namd1 function) averages over initial conditions
@@ -947,15 +498,14 @@ void run_namd1(InputStructure& is, vector<ElectronicStructure>& me_es,vector<me_
     for(i=0;i<sz;i++){
 
       //============ Solve TD-SE and do SH ============
-      // Set coefficients and state from previous time step to be current ones
+      // Set coefficients and current state index from previous time step to be the current ones
       if(i>0){   me_es[i] << me_es[i-1]; } 
 
       // Solve TD-SE for i-th time step
       me_es[i].init_hop_prob1();
-      propagate_electronic(is,me_es,i,rates);    // update_hop_prob -is called in there 
+      propagate_electronic(is,me_es,i,rates);    // update_hop_prob - is called in there 
                                                  // rates are only used if decoherence==5 or decoherence==6
                                                             
-
       // Calculate the probabilities off all states and hopping probabilities
       me_es[i].update_populations();
 

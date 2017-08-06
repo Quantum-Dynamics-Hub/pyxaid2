@@ -545,10 +545,28 @@ void ElectronicStructure::propagate_coefficients2(double dt, CMATRIX& Ef){
   double tol = 1e-12;
   complex<double> arg(0.0,(-dt/HBAR));
 
+
+  int i,j;
+  complex<double> Hprime;
+
   // hermitian symmetrize Hcurr - just to be sure the algorithm will work better
   CMATRIX tmp(Hcurr->n_rows,Hcurr->n_cols);
   tmp = ((*Hcurr) + (*Hcurr).H());
   tmp *= 0.5;
+
+
+  // Electric field is now included with integrator = 2
+  for(i=0;i<num_states;i++){
+    for(j=0;j<num_states;j++){
+        Hprime = Ef.M[0]*Hprimex->M[i*num_states+j] +
+                 Ef.M[1]*Hprimey->M[i*num_states+j] +
+                 Ef.M[2]*Hprimez->M[i*num_states+j];
+
+        tmp.add(i,j,Hprime);
+
+    }// for j
+  }// for i
+
 
   CMATRIX U(Hcurr->n_rows, Hcurr->n_cols);
   exp_matrix(U, tmp, arg);

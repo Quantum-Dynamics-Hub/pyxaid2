@@ -27,9 +27,9 @@ class info{
   // Class members
   void version(){
     cout<<"================================================================================\n";
-    cout<<"PYXAID: PYthon eXtension for Ab Inition Dynamics version 1.0\n";
+    cout<<"PYXAID2: PYthon eXtension for Ab Inition Dynamics version 2.0\n";
     cout<<"/***********************************************************\n";
-    cout<<" * Copyright (C) 2013 PYXAID group\n";
+    cout<<" * Copyright (C) 2017 PYXAID2 group\n";
     cout<<" * This program is free software distributed under the terms of the\n";
     cout<<" * GNU General Public License as published by the\n";
     cout<<" * Free Software Foundation; either version 3 of the\n";
@@ -41,7 +41,7 @@ class info{
   void developers(){
     cout<<"===== Name ========================== Contact info ==============\n";
     cout<<"Alexey V. Akimov              e-mail: alexvakimov@gmail.com      \n";
-    cout<<"Oleg V. Prezhdo               e-mail: oprezhdo@chem.rochester.edu\n";
+    cout<<"Wei Li                        e-mail: liwei0099@gmail.com\n";
     cout<<"...\n";
   }
 

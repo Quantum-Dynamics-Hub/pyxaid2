@@ -55,8 +55,8 @@ int namd(boost::python::dict inp_params){
   cout<<"Number of electrons in active space = "<<num_elec<<endl;
   
   // Initialize random number generator
-  srand(time(0));
-  cout<<"RAND_MAX = "<<RAND_MAX<<endl;
+//  srand(time(0));
+//  cout<<"RAND_MAX = "<<RAND_MAX<<endl;
 
   // icond loop - from the input dictionary
   vector< vector<int> > iconds; // iconds[j][0] = init_time[j], iconds[j][1] = init_state[j]
@@ -113,7 +113,7 @@ int namd(boost::python::dict inp_params){
           cout<<"Reading Haa file(real part) = "<<Haa_re_file<<endl;
           cout<<"Reading Hab file(real part) = "<<Hab_re_file<<endl;
           cout<<"Reading Hbb file(real part) = "<<Hbb_re_file<<endl;
-		   }
+      }
 
       
       file2matrix(Ham_re_file,Ham_re);
@@ -453,12 +453,9 @@ int namd(boost::python::dict inp_params){
               oe_es[t].Hcurr->M[2*k1*(2*numstates)+2*k2+1] = Hab.M[k1*numstates+k2]; 
               
 
-		  }
-
-            
+	    }
           }// for k2
         }// for k1
-//      }// if namd
 
 //      cout<<"*(oe_es[t].Hcurr) = "<<*(oe_es[t].Hcurr)<<endl;
     }// namdtime loop - duration of run  - finishes at time init_time[icond]+namdtime
@@ -623,14 +620,8 @@ int namd(boost::python::dict inp_params){
         run_decoherence_rates(params,me_es,me_states,icond);
     }
     //>>>>> Run NA-MD
-//    if(params.runtype=="namd" && params.decoherence==0){
-//        cout<<"Starting na-md simulations\n";
-//        run_namd(params,me_es,me_states,icond,rnd); 
-//    }
-//    if(params.runtype=="namd" && params.decoherence>0){
     cout<<"Starting na-md simulations with (optional) decoherence\n";
     run_namd1(params,me_es,me_states,icond, rnd);
-//    }
 
     oe_es.clear();
     me_es.clear();

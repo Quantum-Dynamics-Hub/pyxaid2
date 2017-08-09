@@ -266,7 +266,7 @@ def compute_H_el(C_dia_a, C_dia_b, C_adi_a, C_adi_b, E_adi_a, E_adi_b):
 
 
 
-def compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, E_adi_curr, E_adi_next, params):
+def compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, E_adi_curr, E_adi_next,e_curr1, e_next1, params):
     """ 
     The first set of coefficients corresponds to the diabatic orbitals:
     coeff_curr and coeff_next - [0] - alpha, [1] - beta
@@ -295,8 +295,10 @@ def compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, E_adi_curr, E
     else:
         # Here, we copy matrices by references, but that is okay
         # since we don't modify the final matrix
-        c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = split_orbitals(coeff_curr[0])
-        c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = split_orbitals(coeff_next[0])
+        c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = split_orbitals_energies(coeff_curr[0], E_adi_curr[0])
+        c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = split_orbitals_energies(coeff_next[0], E_adi_next[0])
+        #c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = split_orbitals(coeff_curr[0])
+        #c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = split_orbitals(coeff_next[0])
 
 
 
@@ -335,6 +337,15 @@ def compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, E_adi_curr, E
     Hvib_aa = 0.5*(H_aa_curr + H_aa_next) - (0.5j/dt)*(St_aa - St_aa.H())
     Hvib_ab = 0.5*(H_ab_curr + H_ab_next)
     Hvib_bb = 0.5*(H_bb_curr + H_bb_next) - (0.5j/dt)*(St_bb - St_bb.H())
+
+    sz=Hvib_aa.num_of_cols
+    for i in range(0,sz):
+        for j in range(0,sz):
+            if i==j:
+               Hvib_aa.set(i,i,0.5*(e_curr1[0].get(i,i) + e_next1[0].get(i,i)))
+               Hvib_bb.set(i,i,0.5*(e_curr1[1].get(i,i) + e_next1[1].get(i,i)))
+            else:
+                pass
 
     # Print out the results
     Hvib_aa.real().show_matrix("%s/Hvib_aa_%d_re" % (rd, curr_index) )
@@ -724,7 +735,7 @@ def runMD(params):
 
 
                     prms = {"do_orth": 1, "root_directory" : rd, "curr_index" : curr_index, "print_overlaps" : 1, "dt": dt}
-                    compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, e_curr, e_next, prms)
+                    compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, e_curr, e_next,e_curr1, e_next1,  prms)
 
 
                 else:
@@ -735,6 +746,8 @@ def runMD(params):
 
             H.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )
             H.imag().show_matrix("%s/0_Ham_%d_im" % (rd, curr_index) )    
+            H_dia.real().show_matrix("%s/0_H_dia_%d_re" % (rd, curr_index) )
+            H_dia.imag().show_matrix("%s/0_H_dia_%d_im" % (rd, curr_index) )    
             S.real().show_matrix("%s/0_S_%d_re" % (rd, curr_index) )
             S.imag().show_matrix("%s/0_S_%d_im" % (rd, curr_index) )
 

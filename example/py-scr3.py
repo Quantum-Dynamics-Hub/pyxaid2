@@ -12,7 +12,7 @@ params = {}
 # These paths must direct to the folder that contains the results of
 # the step2 calculations (Ham_ and (optinally) Hprime_ files) and give
 # the prefixes and suffixes of the files to read in
-rt = "/home/eric/spin-relaxation/GaAs/res_scale2/" 
+rt = "/home/eric/src/Libra/for_develop/pyxaid2/example/res/" 
 params["Ham_re_prefix"] = rt+"0_H_dia_"
 params["Ham_re_suffix"] = "_re"
 params["Ham_im_prefix"] = rt+"0_H_dia_"
@@ -62,7 +62,7 @@ params["is_field"] = 0                       # Do you want to include laser exci
 params["elec_dt"] = 1.0                      # Electronic integration time step, fs
 params["nucl_dt"] = 1.0                      # Nuclear integration time step, fs (this parameter comes from 
                                              # you x.md.in file)
-params["integrator"] = 0                     # Integrator to solve TD-SE. Possible values: 0, 10,11, 2
+params["integrator"] = 2                     # Integrator to solve TD-SE. Possible values: 0, 10,11, 2
 
 # NA-MD trajectory and SH control 
 params["namdtime"] = 180                      # Trajectory time, fs
@@ -72,7 +72,7 @@ params["Temp"] = 300.0                       # Temperature of the system
 
 
 params["td_pop"] = 0                          # whether to output time-dependent population. 0, no; 1, yes
-params["alp_bet"] = 1                        # How to treat spin. Possible values: 0 - alpha and beta spins are not
+params["alp_bet"] = 0                        # How to treat spin. Possible values: 0 - alpha and beta spins are not
                                              # coupled to each other, 1 - don't care about spins, only orbitals matter
 
 params["debug_flag"] = 0                     # If you want extra output. Possible values: 0, 1, 2, ...
@@ -106,9 +106,9 @@ params["active_space"] = [1,2]
 params["states"] = []
 #params["states"].append(["GS",[10,-10,11,-11],0.00])  # ground state
 #params["states"].append(["S1",[10,-10,11,-12],0.00])  # excited state -3 (HOMO) -> -4 (LUMO)
-#params["states"].append(["GS",[1,-1],0.00])  # ground state
-params["states"].append(["GS",[1,-2],0.00])  # ground state
-params["states"].append(["GS",[1,2],1.60])  # ground state
+params["states"].append(["GS",[1,-1],0.00])  # ground state
+#params["states"].append(["GS",[1,-2],0.00])  # ground state
+params["states"].append(["GS",[1,-2],1.60])  # ground state
 #params["states"].append(["S1",[-1,-2],1.30])  # excited state -3 (HOMO) -> -4 (LUMO)
 #params["states"].append(["T1",[9,10],2.00])  # excited state -3 (HOMO) -> -4 (LUMO)
 #params["states"].append(["S1",[2,-2,3,-5],0.00])  #  HOMO -> LUMO + 1

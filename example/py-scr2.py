@@ -12,8 +12,8 @@ tot_nsteps = 3000
 # IMPORTANT: 
 # 1) use only ABSOLUTE path for PP in x.scf.in file
 # 2) provided input file is just a template, so do not include coordinates
-out2inp.out2inp("GaAs-md.out","x0.scf.in","wd","x0.scf",0,tot_nsteps,1)  # adiabatic setup
-out2inp.out2inp("GaAs-md.out","x1.scf.in","wd","x1.scf",0,tot_nsteps,1)  # diabatic setup
+out2inp.out2inp("GaAs-md.out","x0.scf.in","wd","x0.scf",0,tot_nsteps,1)  # diabatic setup
+out2inp.out2inp("GaAs-md.out","x1.scf.in","wd","x1.scf",0,tot_nsteps,1)  # adiabatic setup
 
 
 # Step 2 - distribute all time steps into groups(jobs) 

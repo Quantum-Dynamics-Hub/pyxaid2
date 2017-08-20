@@ -1,9 +1,9 @@
 &inputpp
   prefix = 'x1',
   outdir = './',
-  pseudo_dir = '/home/eric/spin-relaxation/pp',
-  psfile(1) = 'Ga.pbe-dn-rrkjus_psl.0.2.UPF',
-  psfile(2) = 'As.pbe-n-rrkjus_psl.0.2.UPF',
+  pseudo_dir = '/home/eric/src/Libra/for_develop/pyxaid2/example/pp',
+  psfile(1) = 'Ga.rel-pbe-dn-rrkjus_psl.0.2.UPF',
+  psfile(2) = 'As.rel-pbe-n-rrkjus_psl.0.2.UPF',
   single_file = .FALSE.,
   ascii = .TRUE.,
   uspp_spsi = .FALSE.,

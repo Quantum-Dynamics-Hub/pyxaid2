@@ -372,6 +372,53 @@ def compute_Hvib(coeff_curr, coeff_next, coeff_curr1, coeff_next1, E_adi_curr, E
 
 
 
+def read_all(wd, order, ind, act_space, info):
+    """
+    This function reads index, wfc and grid files from a given directory
+    The number of wfc and grid files may be larger than 1 - this is the
+    case of spin-polarized or multiple k-points calculations
+
+    Parameters:
+    wd (string) - "working directory", the path to cuur* and next* directories
+    order (string) - "curr" or "next"
+    ind (integer) - 0, 1 This index is also used to enumerate
+                  the prefixes of the export directories (types of calculations)
+    act_space (list of ints) - defines the indices of the orbitals we are 
+                 interested in, so to minimize the computational burden
+    info (dictionary) - contains some info about the calculation (e.g. the # 
+                of the k-points to read)
+
+    Return values:
+    The function returs lists containing: energies, plane wave coefficients,
+    and the grid point vectors
+    """
+
+    # Verbosity level in 3 functions for reading.
+    # Set to 1 if you debug, 0 in the production runs
+    verb0 = 0   # for index
+    verb1 = 0   # for wfc
+    verb2 = 0   # for grid
+
+    file0 = "%s/%s%i/x%i.export/index.xml" % (wd, order, ind, ind)
+    print "Reading index from file ", file0
+    dum, e = QE_methods.read_qe_index(file0, act_space, verb0)
+
+    coeff = []
+    grid = []
+
+    for ik in xrange(info["nk"]):
+        print "Handling the k-point %i with coordinates: %8.5f %8.5f %8.5f " \
+         % (ik, info["k"][ik].x, info["k"][ik].y, info["k"][ik].z)
+
+        file1 = "%s/%s%i/x%i.export/wfc.%i" % (wd, order, ind, ind, ik+1)
+        print "Reading the wfc from file ",file1
+        coeff.append( QE_methods.read_qe_wfc(file1, act_space, verb1))
+
+        file2 = "%s/%s%i/x%i.export/grid.%i" % (wd, order, ind, ind, ik+1)
+        print "Reading the grid from file ", file2
+        grid.append( QE_methods.read_qe_wfc_grid(file2 , verb2) )
+
+    return e, coeff, grid
 
 
 
@@ -382,6 +429,8 @@ def runMD(params):
 # wd - working directory, where all output (working) files will be written
 # rd - results directory, where all final results (energy, NAC, H', etc.) will be written by default it will be set to wd
 # This MD uses corrected NAC method
+
+    tim = Timer()
 
     print "Starting runMD"
 
@@ -454,7 +503,7 @@ def runMD(params):
                                 # results directory should already exist
 
     while t<=stop_indx:
-        print "t= ", t
+        print ">>>>>>>>>>>>>>>>>>>>  t= ", t, " <<<<<<<<<<<<<<<<<<<<<"
 
         dirname = ""
         if t==start_indx:
@@ -468,6 +517,7 @@ def runMD(params):
            dirname1 = "next1"
 
 
+        tim.start()
         # A common block
         # Run calculations
         # A regular calculation anyway, no mattter whether it includes the SOC effect
@@ -498,11 +548,12 @@ def runMD(params):
             os.system( "mv *.wfc* %s/%s" % (wd, dirname) )
             os.system( "mv x1.export %s/%s" % (wd, dirname) ) # "x1" - corresponds to x1 as a prefix in input files
 
-
+        print "Time to run first calculations = ", tim.stop(); 
 
         # Now general part - from current and next wavefunctions calculate NACs:
         # First see wther the calculation is what we wanted
         if curr_index>=start_indx:
+            tim.start()
             print "Generate NAC from WFCs at two adjacent points"
 
             # some checks
@@ -543,9 +594,10 @@ def runMD(params):
 
                 print "The total # of k-points (spin-polarized) including up and down components is: ", info1["nk"]
 
+
+
             # read the coefficients and energies for the mluti k-points cases, even if some cases require gamma only
-            
-            
+                        
             if nac_method == 0 or nac_method == 1 or nac_method == 3:
                 # read the coefficients anyway
                 # no matter it includes the soc
@@ -555,25 +607,12 @@ def runMD(params):
                 elif info["nspin"] == 4:
                     act_space = act_sp2
 
-                #====== Current electronic structure ===========
-                dum, e_curr = QE_methods.read_qe_index("%s/curr0/x0.export/index.xml" % wd, act_space, 0)
-                coeff_curr = []
-                grid_curr = []
-
-                for ik in xrange(info["nk"]):
-                    print ik, info["k"][ik]
-                    coeff_curr.append( QE_methods.read_qe_wfc("%s/curr0/x0.export/wfc.%i" % (wd, ik+1), act_space, 0))
-                    grid_curr.append( QE_methods.read_qe_wfc_grid("%s/curr0/x0.export/grid.%i" % (wd, ik+1) , 0) )
+                #====== Current electronic structure ========
+                e_curr, coeff_curr, grid_curr = read_all(wd, "curr", 0, act_space, info)
 
                 #====== Next electronic structure ===========
-                dum, e_next = QE_methods.read_qe_index("%s/next0/x0.export/index.xml" % wd, act_space, 0)
-                coeff_next = []
-                grid_next = []
+                e_next, coeff_next, grid_next = read_all(wd, "next", 0, act_space, info)
 
-                for ik in xrange(info["nk"]):
-                    print ik, info["k"][ik]
-                    coeff_next.append( QE_methods.read_qe_wfc("%s/next0/x0.export/wfc.%i" % (wd, ik+1), act_space, 0))
-                    grid_next.append( QE_methods.read_qe_wfc_grid("%s/next0/x0.export/grid.%i" % (wd, ik+1) , 0) )
 
 
             if nac_method == 2 or nac_method == 3:
@@ -582,32 +621,15 @@ def runMD(params):
 
                 act_space = act_sp1
 
-                #====== Current electron electructure ========
-                # we do use the info1 dict here, since the info1 contains the key for k-vector
-                dum, e_curr1 = QE_methods.read_qe_index("%s/curr1/x1.export/index.xml" % wd, act_space, 0)
-                coeff_curr1 = []
-                grid_curr1 = []
-
-                for ik in xrange(info1["nk"]):
-                    print ik, info1["k"][ik]
-                    coeff_curr1.append(QE_methods.read_qe_wfc("%s/curr1/x1.export/wfc.%i" % (wd,ik+1),act_space,0)) 
-                    grid_curr1.append( QE_methods.read_qe_wfc_grid("%s/curr1/x1.export/grid.%i" % (wd, ik+1) , 0) )
-                    
+                #====== Current electron electructure =======
+                e_curr1, coeff_curr1, grid_curr1 = read_all(wd, "curr", 1, act_space, info1)
 
                 #====== Next electronic structure ===========
-                dum, e_next1 = QE_methods.read_qe_index("%s/next1/x1.export/index.xml" % wd, act_space, 0)
-                coeff_next1 = []
-                grid_next1 = []
+                e_next1, coeff_next1, grid_next1 = read_all(wd, "next", 1, act_space, info1)
 
-
-                for ik in xrange(info1["nk"]):
-                    print ik, info1["k"][ik]
-                    coeff_next1.append(QE_methods.read_qe_wfc("%s/next1/x1.export/wfc.%i" % (wd,ik+1),act_space,0))
-                    grid_next1.append( QE_methods.read_qe_wfc_grid("%s/next1/x1.export/grid.%i" % (wd, ik+1) , 0) )
                 
-                #sys.exit(0)
  
-
+            print "Time to read index, wfc, and wfc grids = ", tim.stop();
 
             ######################################### NAC calculation #######################################
             # Finally compute Hamiltonian and the overlap matrix
@@ -628,15 +650,34 @@ def runMD(params):
                         as_sz = len(act_sp1)
                         H = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
                         S = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
+
+                        """
+                        The convention for the matrices for multiple k-points is:
+
+                              |  x_11  x_12 ... |
+                        X =   |  x_21  x_22 ... |
+                              }  ...      ...   |
+
+                        here, each x_ij block is a  as_sz x as_sz matrix describing
+                        the interactions of the as_sz orbitals of a k-point i and 
+                        as_sz orbitals of a k-point j
+
+                        So X is has a k-point first block-structure
+
+                        """
+
                         for ik1 in xrange(info["nk"]):
                             for ik2 in range(ik1, info["nk"]):
+                                tim.start()
                                 ovlp_cc = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_curr[ik1], coeff_curr[ik2], grid_curr[ik1], grid_curr[ik2])
                                 ovlp_nn = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_next[ik1], coeff_next[ik2], grid_next[ik1], grid_next[ik2])
                                 ovlp_cn = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_curr[ik1], coeff_next[ik2], grid_curr[ik1], grid_next[ik2])
                     
+                                print "Time to compute 3 overlaps for the pair of k-points ", ik1, " ", ik2," is ", tim.stop()
                                 h_cc = CMATRIX(as_sz, as_sz)
                                 h_nn = CMATRIX(as_sz, as_sz)
 
+                                tim.start()
                                 for i1 in xrange(as_sz):
                                     for j1 in xrange(as_sz):
                                         h_cc.set(i1, j1, 0.5*(e_curr[ik1].get(i1,i1) + e_curr[ik2].get(j1,j1))*ovlp_cc.get(i1,j1)) 
@@ -656,7 +697,7 @@ def runMD(params):
                                 else:
                                     push_submatrix(S, s, range(ik1*as_sz, (ik1+1)*as_sz), range(ik2*as_sz, (ik2+1)*as_sz))
                                     push_submatrix(H, h, range(ik1*as_sz, (ik1+1)*as_sz), range(ik2*as_sz, (ik2+1)*as_sz))
-                        
+                                print "Time to push matrices is ", tim.stop()
 
 
                 elif info["nspin"]==4:
@@ -746,10 +787,13 @@ def runMD(params):
 
             H.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )
             H.imag().show_matrix("%s/0_Ham_%d_im" % (rd, curr_index) )    
-            H_dia.real().show_matrix("%s/0_H_dia_%d_re" % (rd, curr_index) )
-            H_dia.imag().show_matrix("%s/0_H_dia_%d_im" % (rd, curr_index) )    
             S.real().show_matrix("%s/0_S_%d_re" % (rd, curr_index) )
             S.imag().show_matrix("%s/0_S_%d_im" % (rd, curr_index) )
+
+            if nac_method == 2 or nac_method == 3:
+                H_dia.real().show_matrix("%s/0_H_dia_%d_re" % (rd, curr_index) )
+                H_dia.imag().show_matrix("%s/0_H_dia_%d_im" % (rd, curr_index) )
+
 
 
             #-----------------------------------------------------------------

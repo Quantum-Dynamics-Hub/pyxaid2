@@ -473,13 +473,13 @@ def runMD(params):
     # nac_method = 2 : spin polarized
     # nac_method = 3 : perform 1 and 2 at the same time 
     if nac_method == 0:
-        print "you are doing a non spin polarized calculation for NAC"
+        print "you are doing a non spin-polarized calculation for NAC"
     elif nac_method == 1:
         print "you are doing a SOC calculation for NAC"
     elif nac_method == 2:
-        print "you are doing a spin polarized calculation for NAC"
+        print "you are doing a spin-polarized calculation for NAC"
     elif nac_method == 3:
-        print "you are doing adiabatic/diabatic projrction with SOC for NAC, \
+        print "you are doing adiabatic/diabatic projection with SOC for NAC, \
               it will perform the SOC and spin polarized calculation \
               at the same time"
     else:
@@ -637,11 +637,20 @@ def runMD(params):
 
             # non spin-polarized case
             if nac_method == 0 or nac_method == 1 or nac_method == 3:
+             
 
-                if info["nspin"]==1:  # non soc case
+                if info["nspin"]==1:  # non SOC case
                     if info["nk"]==1: # Only one k-point
-                        ovlp  = coeff_curr[0].H() * coeff_next[0]
-                        H = 0.5*(e_curr[0] + e_next[0]) - (0.5j/dt)*(ovlp - ovlp.H())
+
+                        orthogonalize=1
+                        if orthogonalize==1:
+                            print "Do internal orbital orthogonalization"
+                            coeff_curr[0] = orthogonalize_orbitals(coeff_curr[0])
+                            coeff_next[0] = orthogonalize_orbitals(coeff_next[0])
+
+
+                        ovlp_cn  = coeff_curr[0].H() * coeff_next[0]
+                        H = 0.5*(e_curr[0] + e_next[0]) - (0.5j/dt)*(ovlp_cn - ovlp_cn.H())
                         S = 0.5 *(coeff_curr[0].H() * coeff_curr[0] + coeff_next[0].H() * coeff_next[0]) # for debug
 
                     else: 
@@ -650,6 +659,27 @@ def runMD(params):
                         as_sz = len(act_sp1)
                         H = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
                         S = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
+
+                        # optional orthogonalization - to mitigate the round off errors
+                        orthogonalize=1
+                        if orthogonalize==1:
+                            print "Do internal orbital orthogonalization"
+                            for ik1 in xrange(info["nk"]):
+                                ovlp_cc = pw_overlap(info["k"][ik1], info["k"][ik1], coeff_curr[ik1], coeff_curr[ik1], grid_curr[ik1], grid_curr[ik1])
+                                ovlp_nn = pw_overlap(info["k"][ik1], info["k"][ik1], coeff_next[ik1], coeff_next[ik1], grid_next[ik1], grid_next[ik1])
+
+                                ovlp_cc_half = CMATRIX(ovlp_cc.num_of_rows, ovlp_cc.num_of_cols)
+                                ovlp_cc_i_half = CMATRIX(ovlp_cc.num_of_rows, ovlp_cc.num_of_cols)
+                                sqrt_matrix(ovlp_cc, ovlp_cc_half, ovlp_cc_i_half)
+                                coeff_curr[ik1] = coeff_curr[ik1] * ovlp_cc_i_half
+
+                                ovlp_nn_half = CMATRIX(ovlp_nn.num_of_rows, ovlp_nn.num_of_cols)
+                                ovlp_nn_i_half = CMATRIX(ovlp_nn.num_of_rows, ovlp_nn.num_of_cols)
+                                sqrt_matrix(ovlp_nn, ovlp_nn_half, ovlp_nn_i_half)
+                                coeff_next[ik1] = coeff_next[ik1] * ovlp_nn_i_half
+
+
+
 
                         """
                         The convention for the matrices for multiple k-points is:
@@ -664,16 +694,21 @@ def runMD(params):
 
                         So X is has a k-point first block-structure
 
-                        """
+                        """                     
 
                         for ik1 in xrange(info["nk"]):
                             for ik2 in range(ik1, info["nk"]):
                                 tim.start()
                                 ovlp_cc = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_curr[ik1], coeff_curr[ik2], grid_curr[ik1], grid_curr[ik2])
                                 ovlp_nn = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_next[ik1], coeff_next[ik2], grid_next[ik1], grid_next[ik2])
+                                #ovlp_nc = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_next[ik1], coeff_curr[ik2], grid_next[ik1], grid_curr[ik2])
                                 ovlp_cn = pw_overlap(info["k"][ik1], info["k"][ik2], coeff_curr[ik1], coeff_next[ik2], grid_curr[ik1], grid_next[ik2])
                     
                                 print "Time to compute 3 overlaps for the pair of k-points ", ik1, " ", ik2," is ", tim.stop()
+
+
+
+                                
                                 h_cc = CMATRIX(as_sz, as_sz)
                                 h_nn = CMATRIX(as_sz, as_sz)
 
@@ -683,7 +718,7 @@ def runMD(params):
                                         h_cc.set(i1, j1, 0.5*(e_curr[ik1].get(i1,i1) + e_curr[ik2].get(j1,j1))*ovlp_cc.get(i1,j1)) 
                                         h_nn.set(i1, j1, 0.5*(e_next[ik1].get(i1,i1) + e_next[ik2].get(j1,j1))*ovlp_nn.get(i1,j1))
 
-                                h = 0.5*(h_cc + h_nn)  -(0.5j/dt)*(ovlp_cn - ovlp_cn.H()) 
+                                h = 0.5*(h_cc + h_nn)  - (0.5j/dt)*(ovlp_cn - ovlp_cn.H()) 
                                 s = 0.5*(ovlp_cc + ovlp_nn)
       
                                 if ik2!=ik1:
@@ -753,14 +788,21 @@ def runMD(params):
             
             # spin-polarized case
             if nac_method == 2 or nac_method == 3:
-                if info1["nk"] == 2:  #gamma point only
+                if info1["nk"] == 2:  #single k-point! 
 
                     # assume we use only the alpha coefficient, similar as PYXAID1, ham() function
                     # H_dia =  Eii - i*hbar*(<i(t)|j(t+dt)> - <i(t+dt)|j(t)>)
 
-                    ovlp  = coeff_curr1[0].H() * coeff_next1[0]   
-                    H_dia = 0.5*(e_curr1[0] + e_next1[0]) - (0.5j/dt)*(ovlp - ovlp.H())
+                    orthogonalize = 1
+                    if orthogonalize==1 and nac_method==2:
+                        print "Do internal orbital orthogonalization"
+                        coeff_curr1[0] = orthogonalize_orbitals(coeff_curr1[0])
+                        coeff_next1[0] = orthogonalize_orbitals(coeff_next1[0])
+
+                    ovlp_cn  = coeff_curr1[0].H() * coeff_next1[0]   
+                    H_dia = 0.5*(e_curr1[0] + e_next1[0]) - (0.5j/dt)*(ovlp_cn - ovlp_cn.H())
                     S_dia = 0.5 *(coeff_curr1[0].H() * coeff_curr1[0] + coeff_next1[0].H() * coeff_next1[0])
+
 
                     # check whether the adiabatic and diabatic basis have the same number of plane waves
                     # the reason why I used the read_qe_wfc_info is because I will need the ngw 
@@ -785,12 +827,19 @@ def runMD(params):
                     sys.exit(0)
 
 
+
+
+
             H.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )
             H.imag().show_matrix("%s/0_Ham_%d_im" % (rd, curr_index) )    
             S.real().show_matrix("%s/0_S_%d_re" % (rd, curr_index) )
             S.imag().show_matrix("%s/0_S_%d_im" % (rd, curr_index) )
 
-            if nac_method == 2 or nac_method == 3:
+            if nac_method == 2:
+                H_dia.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )
+                H_dia.imag().show_matrix("%s/0_Ham_%d_im" % (rd, curr_index) )
+
+            if nac_method == 3:
                 H_dia.real().show_matrix("%s/0_H_dia_%d_re" % (rd, curr_index) )
                 H_dia.imag().show_matrix("%s/0_H_dia_%d_im" % (rd, curr_index) )
 

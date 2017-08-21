@@ -13,9 +13,9 @@ params = {}
 # the step2 calculations (Ham_ and (optinally) Hprime_ files) and give
 # the prefixes and suffixes of the files to read in
 rt = "/home/eric/src/Libra/for_develop/pyxaid2/example/res/" 
-params["Ham_re_prefix"] = rt+"0_H_dia_"
+params["Ham_re_prefix"] = rt+"0_Ham_"
 params["Ham_re_suffix"] = "_re"
-params["Ham_im_prefix"] = rt+"0_H_dia_"
+params["Ham_im_prefix"] = rt+"0_Ham_"
 params["Ham_im_suffix"] = "_im"
 
 params["Haa_re_prefix"] = rt+"0_Hvib_aa_"
@@ -100,13 +100,12 @@ params["field_fluence"] = 1.0               # Defines the light radiation intens
 
 
 # Set active space and the basis states
-#params["active_space"] = [10,11,12,13]
 params["active_space"] = [1,2]
 
 params["states"] = []
 params["states"].append(["GS",[1,-1],0.00])  # ground state
-params["states"].append(["EX1",[1,-2],1.60])  # excited state
-
+params["states"].append(["S1",[1,-2],1.60])  # excited state
+params["states"].append(["T1",[1,2],1.60])  # excited state
 
 
 # Initial conditions

@@ -266,7 +266,7 @@ def compute_H_el(C_dia_a, C_dia_b, C_adi_a, C_adi_b, E_adi_a, E_adi_b):
 
 
 
-def compute_Hvib(coeff_curr1, coeff_next1, coeff_curr0, coeff_next0, E_adi_curr1, E_adi_next1,e_curr0, e_next0, params):
+def compute_Hvib(coeff_curr0, coeff_next0, coeff_curr1, coeff_next1, e_curr0, e_next0, E_adi_curr1, E_adi_next1, params):
     """ 
     The first set of coefficients corresponds to the diabatic orbitals:
     coeff_curr and coeff_next - [0] - alpha, [1] - beta
@@ -468,22 +468,22 @@ def runMD(params):
         sys.exit(0)
 
 
-    # nac_method = 0 : non spin polarized/SOC, multiple k-point
-    # nac_method = 1 : spin polarized
-    # nac_method = 2 : SOC
-    # nac_method = 3 : perform 1 and 2 at the same time 
+    #0 - non-relativistic, non spin-polarized
+    #1 - non-relativistic, spin-polarized
+    #2 - relativistic, direct (only spin-adiabatic representation)
+    #3 - relativistic, projections (spin-diabatic representation)
     if nac_method == 0:
-        print "you are doing a non spin-polarized calculation for NAC"
+        print "non-relativistic, non spin-polarized calculation for NAC  \n"
     elif nac_method == 1:
-        print "you are doing a spin-polarized calculation for NAC"
+        print "non-relativistic, spin-polarized calculation for NAC  \n"
     elif nac_method == 2:
-        print "you are doing a SOC calculation for NAC"
+        print "relativistic, direct (only spin-adiabatic representation) calculation for NAC  \n"
     elif nac_method == 3:
         print "you are doing adiabatic/diabatic projection with SOC for NAC, \
               it will perform the SOC and spin polarized calculation \
-              at the same time"
+              at the same time \n"
     else:
-        print "Error: nac_method must be one of the values in [0,1,2,3]"
+        print "Error: nac_method must be one of the values in [0,1,2,3]  \n"
         sys.exit(0)
 
     # Use this for nspin = 1 or 2
@@ -626,7 +626,9 @@ def runMD(params):
 
             ######################################### NAC calculation #######################################
             # Finally compute Hamiltonian and the overlap matrix
-            S, H, S_dia, H_dia, H_soc, S_soc  = None, None, None, None, None, None
+            H, S, H_soc, S_soc  = None, None, None, None
+            # H, vibronic Ham for non-relativistic calculation
+            # H_soc, vibronic Ham for relativistic calculation
 
             # non spin-polarized case
             if nac_method == 0 or nac_method == 1 or nac_method == 3:
@@ -740,8 +742,8 @@ def runMD(params):
                             coeff_next0[0] = orthogonalize_orbitals(coeff_next0[0])
 
                         ovlp_cn  = coeff_curr0[0].H() * coeff_next0[0]   
-                        H_dia = 0.5*(e_curr0[0] + e_next0[0]) - (0.5j/dt)*(ovlp_cn - ovlp_cn.H())
-                        S_dia = 0.5 *(coeff_curr0[0].H() * coeff_curr0[0] + coeff_next0[0].H() * coeff_next0[0])
+                        H = 0.5*(e_curr0[0] + e_next0[0]) - (0.5j/dt)*(ovlp_cn - ovlp_cn.H())
+                        S = 0.5 *(coeff_curr0[0].H() * coeff_curr0[0] + coeff_next0[0].H() * coeff_next0[0])
                     
                     else:
 
@@ -818,21 +820,16 @@ def runMD(params):
 
 
                 prms = {"do_orth": 1, "root_directory" : rd, "curr_index" : curr_index, "print_overlaps" : 1, "dt": dt}
-                compute_Hvib(coeff_curr1, coeff_next1, coeff_curr0, coeff_next0, e_curr1, e_next1, e_curr0, e_next0, prms)
+                compute_Hvib(coeff_curr0, coeff_next0, coeff_curr1, coeff_next1, e_curr0, e_next0, e_curr1, e_next1, prms)
 
 
-
-            if nac_method == 0:
+            if nac_method == 0 or nac_method == 1 or nac_method == 3:
                 H.real().show_matrix("%s/0_Ham_%d_re" % (rd, curr_index) )
                 H.imag().show_matrix("%s/0_Ham_%d_im" % (rd, curr_index) )
 
-            if nac_method == 1 or nac_method == 3:
-                H_dia.real().show_matrix("%s/0_H_dia_%d_re" % (rd, curr_index) )
-                H_dia.imag().show_matrix("%s/0_H_dia_%d_im" % (rd, curr_index) )
-
             if nac_method == 2 or nac_method == 3:
-                H_soc.real().show_matrix("%s/0_H_soc_%d_re" % (rd, curr_index) )
-                H_soc.imag().show_matrix("%s/0_H_soc_%d_im" % (rd, curr_index) )
+                H_soc.real().show_matrix("%s/0_Ham_soc_%d_re" % (rd, curr_index) )
+                H_soc.imag().show_matrix("%s/0_Ham_soc_%d_im" % (rd, curr_index) )
 
 
 

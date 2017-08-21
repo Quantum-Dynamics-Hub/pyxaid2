@@ -15,7 +15,7 @@
   nat = 8,
   ntyp = 2,
   nspin = 2,
-  nbnd = 100,
+  nbnd = 50,
   ecutwfc = 50,
   tot_charge = 0.0,
   occupations = 'smearing',

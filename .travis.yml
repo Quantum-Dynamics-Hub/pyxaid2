@@ -1,10 +1,10 @@
 # This will run on Travis' 'new' container-based infrastructure
-sudo: false
+#sudo: false
 
 # Blacklist
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
 
 # Environment variables
 env:

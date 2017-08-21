@@ -13,22 +13,22 @@ params = {}
 # the step2 calculations (Ham_ and (optinally) Hprime_ files) and give
 # the prefixes and suffixes of the files to read in
 rt = "/home/eric/src/Libra/for_develop/pyxaid2/example/res/" 
-params["Ham_re_prefix"] = rt+"0_H_dia_"
+params["Ham_re_prefix"] = rt+"0_Ham_"
 params["Ham_re_suffix"] = "_re"
-params["Ham_im_prefix"] = rt+"0_H_dia_"
+params["Ham_im_prefix"] = rt+"0_Ham_"
 params["Ham_im_suffix"] = "_im"
 
-params["Haa_re_prefix"] = rt+"Hvib_aa_"
+params["Haa_re_prefix"] = rt+"0_Hvib_aa_"
 params["Haa_re_suffix"] = "_re"
-params["Haa_im_prefix"] = rt+"Hvib_aa_"
+params["Haa_im_prefix"] = rt+"0_Hvib_aa_"
 params["Haa_im_suffix"] = "_im"
-params["Hab_re_prefix"] = rt+"Hvib_ab_"
+params["Hab_re_prefix"] = rt+"0_Hvib_ab_"
 params["Hab_re_suffix"] = "_re"
-params["Hab_im_prefix"] = rt+"Hvib_ab_"
+params["Hab_im_prefix"] = rt+"0_Hvib_ab_"
 params["Hab_im_suffix"] = "_im"
-params["Hbb_re_prefix"] = rt+"Hvib_bb_"
+params["Hbb_re_prefix"] = rt+"0_Hvib_bb_"
 params["Hbb_re_suffix"] = "_re"
-params["Hbb_im_prefix"] = rt+"Hvib_bb_"
+params["Hbb_im_prefix"] = rt+"0_Hvib_bb_"
 params["Hbb_im_suffix"] = "_im"
 
 params["Hprime_x_prefix"] = rt + "/res/0_Hprime_"
@@ -100,19 +100,12 @@ params["field_fluence"] = 1.0               # Defines the light radiation intens
 
 
 # Set active space and the basis states
-#params["active_space"] = [10,11,12,13]
 params["active_space"] = [1,2]
 
 params["states"] = []
-#params["states"].append(["GS",[10,-10,11,-11],0.00])  # ground state
-#params["states"].append(["S1",[10,-10,11,-12],0.00])  # excited state -3 (HOMO) -> -4 (LUMO)
 params["states"].append(["GS",[1,-1],0.00])  # ground state
-#params["states"].append(["GS",[1,-2],0.00])  # ground state
-params["states"].append(["GS",[1,-2],1.60])  # ground state
-#params["states"].append(["S1",[-1,-2],1.30])  # excited state -3 (HOMO) -> -4 (LUMO)
-#params["states"].append(["T1",[9,10],2.00])  # excited state -3 (HOMO) -> -4 (LUMO)
-#params["states"].append(["S1",[2,-2,3,-5],0.00])  #  HOMO -> LUMO + 1
-#params["states"].append(["S1",[2,-4,3,-3],0.00])  # HOMO -1 -> LUMO
+params["states"].append(["S1",[1,-2],1.60])  # excited state
+params["states"].append(["T1",[1,2],1.60])  # excited state
 
 
 # Initial conditions

@@ -2,7 +2,7 @@
   calculation = 'scf',
   dt = 20.67055,
 !  nstep = 50,
-  pseudo_dir = '/home/eric/spin-relaxation/pp',
+  pseudo_dir = '/home/eric/src/Libra/for_develop/pyxaid2/example/pp',
   outdir = './',
   prefix = 'x0',
   disk_io = 'low',
@@ -14,17 +14,17 @@
   celldm(1) = 1.89,
   nat = 8,
   ntyp = 2,
-  !nspin = 2,
-  nbnd = 200,
+  nspin = 2,
+  nbnd = 50,
   ecutwfc = 50,
   tot_charge = 0.0,
-  starting_magnetization(1) = 0.00,
   occupations = 'smearing',
+  starting_magnetization(1) = 0.01,
   smearing = 'gaussian',
   degauss = 0.005,
   nosym = .true.,
-  lspinorb=.true.,
-  noncolin = .true.,
+  !lspinorb=.true.,
+  !noncolin = .true.,
 /
 
 &ELECTRONS
@@ -42,8 +42,9 @@
 
 
 ATOMIC_SPECIES
- Ga   69.723   Ga.rel-pbe-dn-rrkjus_psl.0.2.UPF
- As   74.921   As.rel-pbe-n-rrkjus_psl.0.2.UPF
+ Ga   69.723   Ga.pbe-dn-rrkjus_psl.0.2.UPF
+ As   74.921   As.pbe-n-rrkjus_psl.0.2.UPF
+
 
 
 K_POINTS automatic

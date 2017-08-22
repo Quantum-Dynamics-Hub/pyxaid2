@@ -247,7 +247,7 @@ def runMD(params):
 
                     as_sz = len(act_space)
                     H = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
-
+                    S = CMATRIX(info["nk"]*as_sz, info["nk"]*as_sz )
                     for ik1 in xrange(info["nk"]):
                         for ik2 in range(ik1, info["nk"]):
 

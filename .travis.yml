@@ -1,6 +1,6 @@
 # This will run on Travis' 'new' container-based infrastructure
 dist: trusty
-sudo: false
+#sudo: false
 language: cpp
 
 
@@ -23,9 +23,10 @@ addons:
       - doxygen-latex
       - doxygen-gui
       - graphviz
+      - g++
+      - gcc
       - make
       - cmake
-      - boost
 
 # Build your code e.g. by calling make
 script:

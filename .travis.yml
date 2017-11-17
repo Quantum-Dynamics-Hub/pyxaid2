@@ -1,5 +1,8 @@
 # This will run on Travis' 'new' container-based infrastructure
-#sudo: false
+dist: trusty
+sudo: false
+language: cpp
+
 
 # Blacklist
 #branches:
@@ -20,11 +23,18 @@ addons:
       - doxygen-latex
       - doxygen-gui
       - graphviz
+      - make
+      - cmake
+      - boost
 
 # Build your code e.g. by calling make
 script:
-  - cd docs
+  - cd PYXAID2/src_cpp
+  - make
+  - cd ../../docs
   - doxygen Doxyfile
+
+
 
 
 # Deploy using travis builtin GitHub Pages support

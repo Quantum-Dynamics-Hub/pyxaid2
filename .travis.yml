@@ -30,9 +30,10 @@ addons:
 
 # Build your code e.g. by calling make
 script:
-  - cd PYXAID2/src_cpp
-  - make
-  - cd ../../docs
+#  - cd PYXAID2/src_cpp
+#  - make
+#  - cd ../../docs
+  - cd docs
   - doxygen Doxyfile
 
 

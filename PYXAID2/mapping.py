@@ -21,6 +21,30 @@ elif sys.platform=="linux" or sys.platform=="linux2":
 from libra_py import *
 
 
+def elementary_overlap(psi1, psi2):
+    """
+    This function creates a matrix of elementary overlaps - the overlaps
+    of the 1-electron 2-component spin-orbitals. The spin-orbitals can have an
+    arbitrary meaning: either spin-adiabatic (then both alpha and beta spatial
+    parts are non-zero) or spin-diabatic (then one of the components is zero)
+     
+    psi1, psi2 - are the lists of 2 elements, each element is CMATRIX(npw, ndim) with the
+    plane-wave coefficients for the spatial part for all spin-orbitals
+    ndim may be different for psi1 and psi2
+
+    psi1[0], psi2[0] - alpha
+    psi1[1], psi2[1] - beta
+
+    """
+    n, m = psi1[0].num_of_cols, psi2[0].num_of_cols
+
+    ovlp = CMATRIX(n,m)   # <psi1 | psi2 >
+
+    ovlp = psi1[0].H() * psi2[0] +  psi1[1].H() * psi2[1]   # Eq. 17
+
+    return ovlp    
+    
+    
 
 
 def adi2indx(inp):
@@ -70,7 +94,7 @@ def ovlp_arb(SD1, SD2, S):
     s = CMATRIX(sz1,sz2)
     pop_submatrix(S, s, SD1, SD2)
 
-    return det(s)
+    return det(s)    # Eq. 16
 
 
 

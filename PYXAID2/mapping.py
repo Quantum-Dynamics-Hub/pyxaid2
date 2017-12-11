@@ -99,25 +99,115 @@ def ovlp_arb(SD1, SD2, S):
 
 
 def ovlp_aa(SD1, SD2, S):
-# Overlap of two spin-adiabatic SDs
+    # Overlap of two spin-adiabatic SDs
+    # SD1, SD2 - list of ints, representing SDs, e.g. [1,2]
+    # S - is the elementary overlap of the 1-electron functions
+
     sd1 = adi2indx(SD1)
     sd2 = adi2indx(SD2)
 
     return ovlp_arb(sd1, sd2, S)
 
 def ovlp_dd(SD1, SD2, S):
-# Overlap of two spin-adiabatic SDs
+    # Overlap of two spin-adiabatic SDs
+    # SD1, SD2 - list of ints, representing SDs, e.g. [1,2]
+    # S - is the elementary overlap of the 1-electron functions
+
     sd1 = dia2indx(SD1)
     sd2 = dia2indx(SD2)
 
     return ovlp_arb(sd1, sd2, S)
 
 def ovlp_da(SD1, SD2, S):
-# Overlap of two spin-adiabatic SDs
+    # Overlap of two spin-adiabatic SDs
+    # SD1, SD2 - list of ints, representing SDs, e.g. [1,2]
+    # S - is the elementary overlap of the 1-electron functions
+
     sd1 = dia2indx(SD1)
     sd2 = adi2indx(SD2)
 
     return ovlp_arb(sd1, sd2, S)
+
+
+
+def ovlp_mat_aa(SD1, SD2, S):
+    #  A matrix composed of the SD overlaps
+    #  SD1, SD2 - lists of lists, representing two bases of Slater Determinant functions
+    # e.g. SD1 = [[1,2], [1,3], [2,3]]
+    # S - is the elementary overlap of the 1-electron functions
+
+    N, M = len(SD1), len(SD2)
+    res = CMATRIX(N,M)
+
+    for n in xrange(N):
+        for m in xrange(M):
+            res.set(n,m, ovlp_aa(SD1[n], SD2[m], S))
+
+    return res
+
+
+def ovlp_mat_dd(SD1, SD2, S):
+    #  A matrix composed of the SD overlaps
+    #  SD1, SD2 - lists of lists, representing two bases of Slater Determinant functions
+    # e.g. SD1 = [[1,2], [1,3], [2,3]]
+    # S - is the elementary overlap of the 1-electron functions
+
+    N, M = len(SD1), len(SD2)
+    res = CMATRIX(N,M)
+
+    for n in xrange(N):
+        for m in xrange(M):
+            res.set(n,m, ovlp_dd(SD1[n], SD2[m], S))
+
+    return res
+
+
+def ovlp_mat_da(SD1, SD2, S):
+    #  A matrix composed of the SD overlaps
+    #  SD1, SD2 - lists of lists, representing two bases of Slater Determinant functions
+    # e.g. SD1 = [[1,2], [1,3], [2,3]]
+    # S - is the elementary overlap of the 1-electron functions
+
+    N, M = len(SD1), len(SD2)
+    res = CMATRIX(N,M)
+
+    for n in xrange(N):
+        for m in xrange(M):
+            res.set(n,m, ovlp_da(SD1[n], SD2[m], S))
+
+    return res
+
+       
+def energy_aa(SD, e):
+    # Computes the energy of the SD
+    # SD = [int_list] the list of integers represents the occupied orbitals
+    # e - is a diagonal matrix with 1-electron orbital energies
+
+    sd = adi2indx(SD)
+    res = 0.0+0.0j
+
+    for i in sd:
+        res = res + e.get(i,i) 
+   
+    return res 
+   
+
+
+def energy_mat_aa(SD, e, dE):
+    # Computes a matrix of the SD energies 
+    # SD - [ [list_of_ints], [list_of_ints], ... ]    # a list of SDs 
+    # e - is a diagonal matrix with 1-electron orbital energies
+    # dE - a list of energy corrections added to each SD
+
+    n = len(SD)
+    E = CMATRIX(n,n)
+
+    E0 = energy_aa(SD[0], e) + dE[0]*(1.0+0.0j)
+    for i in xrange(n):
+        E.set(i,i, energy_aa(SD[i], e) + dE[i]*(1.0+0.0j) - E0 )
+
+    return E
+              
 
 
 

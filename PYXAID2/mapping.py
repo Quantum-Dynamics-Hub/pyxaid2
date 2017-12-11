@@ -67,10 +67,10 @@ def ovlp_arb(SD1, SD2, S):
 
     sz1,sz2 = len(SD1), len(SD2)
 
-    x = CMATRIX(sz1,sz2)
-    pop_submatrix(X, x, SD1, SD2)
+    s = CMATRIX(sz1,sz2)
+    pop_submatrix(S, s, SD1, SD2)
 
-    return det(x)
+    return det(s)
 
 
 

@@ -22,7 +22,8 @@ elif sys.platform=="linux" or sys.platform=="linux2":
     from liblibra_core import *
 
 from libra_py import *
-#from PYXAID2 import *  This file is to be a part of PYXAID2!
+import mapping
+#from PYXAID2 import *  #for test purpose, I run this file in a different folder, so this line is needed
 
 
 def show_matrix_splot(X, filename):
@@ -81,10 +82,10 @@ def Chi2Phi(Chi_basis):
     Phi_basis = []  # spin-diabatic SDs
 
     for i in xrange(nst_dia_sac):
-        sz = len(Chi[i])
+        sz = len(Chi_basis[i])
 
         for j in xrange(sz):
-            sd = sorted(Chi[i][j][1])
+            sd = sorted(Chi_basis[i][j][1])
  
             if sd not in Phi_basis:
                 Phi_basis.append(sd)
@@ -95,14 +96,14 @@ def Chi2Phi(Chi_basis):
     T = CMATRIX(nst_dia, nst_dia_sac)
 
     for i in xrange(nst_dia_sac):
-        sz = len(Chi[i])
+        sz = len(Chi_basis[i])
 
         for j in xrange(sz):
-            sd = sorted(Chi[i][j][1])
+            sd = sorted(Chi_basis[i][j][1])
 
             k = Phi_basis.index(sd)
 
-            T.set(k,i, Chi[i][j][0]) 
+            T.set(k,i, Chi_basis[i][j][0]) 
 
 
     return Phi_basis, T
@@ -135,12 +136,8 @@ def compute_Hvib(Psi_basis, St_adi_ks, E_adi_ks, dE, dt ):
     nst_adi = len(Psi_basis)
 
     Stadi = mapping.ovlp_mat_aa(Psi_basis, Psi_basis, St_adi_ks) # nst_adi x nst_adi, one of the terms in Eq. 15
-    nac = (0.5j/dt)*(Stadi - Stadi.H() )    # <Psi|d/dt|Psi> (t+dt/2)
-
-    H_el = energy_mat_aa(Psi_basis, E_adi_ks, dE)
-
-    H_vib = H_el - (0.5j/dt)*(nac-nac.H())
-
+    H_el = mapping.energy_mat_aa(Psi_basis, E_adi_ks, dE)
+    H_vib = H_el - (0.5j/dt)*(Stadi-Stadi.H())
     return H_vib
 
 
@@ -160,7 +157,6 @@ def compute_L(Phi_basis, Psi_basis, S_adi_ks, S_dia_adi_ks, S_dia_ks):
     #S_adi = mapping.ovlp_mat_aa(Psi_basis, Psi_basis, S_adi_ks)   # nst_adi x nst_adi
     #S_dia = mapping.ovlp_mat_dd(Phi_basis, Phi_basis, S_dia_ks)   # nst_dia x nst_dia
 
-
     return L  #, S_adi, S_dia
 
 
@@ -169,26 +165,21 @@ def compute_L(Phi_basis, Psi_basis, S_adi_ks, S_dia_adi_ks, S_dia_ks):
 def run_namd(params):
 
     rnd = Random()
-
+    T = params["T"]
     init_time = params["init_time"]  # integer
-
+    dt = params["dt"]
     len_traj = params["len_traj"]
     num_sh_traj = params["num_sh_traj"]
     sh_method = params["sh_method"]
     do_collapse = params["do_collapse"]
 
 
-    psi_dia_ks = params["psi_adi_ks"];   nst_dia_ks = 2*len(psi_dia_ks)
+    psi_dia_ks = params["psi_dia_ks"];   nst_dia_ks = 2*len(psi_dia_ks)
     psi_adi_ks = params["psi_adi_ks"];   nst_adi_ks = len(psi_adi_ks)
 
-    Chi_basis = params["Phi_basis"];     nst_dia_sac = len(Chi_basis)
-    Phi_basis, C2P = Chi2Phi(Chi_basis); nst_dia = len(Phi_basis)   # C2P is the matrix T from Eq. 3, (nst_dia x nst_dia_sac)
+    Chi_basis = params["Chi_basis"];     nst_dia_sac = len(Chi_basis)
+    Phi_basis, C2P = Chi2Phi(Chi_basis); nst_dia = len(Phi_basis) # C2P is the matrix T from Eq. 3, (nst_dia x nst_dia_sac)
     Psi_basis = params["Psi_basis"];     nst_adi = len(Psi_basis)
-
-    tmp = C2P.H() * C2P;  # nst_dia_sac x nst_dia_sac
-    tmp_inv = CMATRIX(nst_dia_sac, nst_dia_sac)
-    FullPivLU_inverse(tmp, tmp_inv)    
-    C2P_inv = tmp_inv * C2P.H()  #  (nst_dia_sac x nst_dia_sac) x (nst_dia_sac x nst_dia) = (nst_dia_sac x nst_dia)
 
 
     # ------------------read and store the projection and energies------------------
@@ -214,7 +205,6 @@ def run_namd(params):
         im_sf = params["S_dia_ks_im_suffix"]
 
         S_dia_ks = get_matrix(nst_dia_ks, nst_dia_ks, i, re_pr, re_sf, im_pr, im_sf )
-
 
         re_pr = params["S_dia_adi_ks_re_prefix"]
         re_sf = params["S_dia_adi_ks_re_suffix"]
@@ -274,7 +264,6 @@ def run_namd(params):
 
     init_Chi = params["init_Chi"]    
 
-
     #========== Initialize the wavefunction amplitudes ===============
     # TD-SE coefficients
     Coeff_Chi = [];  
@@ -283,11 +272,9 @@ def run_namd(params):
 
     for tr in xrange(num_sh_traj):
 
-        Coeff_Chi.append(CMATRIX(init_Chi, 1)); 
-        Coeff_Chi[tr].set(init_st_dia, 1.0, 0.0)
-
+        Coeff_Chi.append(CMATRIX(nst_dia_sac, 1)); 
+        Coeff_Chi[tr].set(init_Chi, 1.0, 0.0)
         Coeff_Phi.append(C2P * Coeff_Chi[tr]) 
-
         X = L[init_time].H() * L[init_time]   # adi x adi
         X_inv = CMATRIX(nst_adi, nst_adi); FullPivLU_inverse(X, X_inv)
         Coeff_Psi.append( X_inv * L[init_time].H() * Coeff_Phi[tr] )
@@ -362,8 +349,7 @@ def run_namd(params):
             ksi2 = rnd.uniform(0.0, 1.0)
 
             # Surface hopping
-            istate[tr] = tsh.hopping(Coeff_Psi[tr], H_vib[i], istate[tr], sh_method, do_collapse, ksi, ksi2, dt)
-
+            istate[tr] = tsh.hopping(Coeff_Psi[tr], H_vib[i], istate[tr], sh_method, do_collapse, ksi, ksi2, dt, T)
 
         #============== Projections and analysis  =================
 
@@ -424,7 +410,7 @@ if __name__=='__main__':
     params["S_dia_adi_ks_im_prefix"] = rt+"/res/S_dia_adi_ks_"
     params["S_dia_adi_ks_im_suffix"] = "_im"
 
-    params["St_adi_ks_re_prefix"] = rt + "/res/St_adia_ks_"
+    params["St_adi_ks_re_prefix"] = rt + "/res/St_adi_ks_"
     params["St_adi_ks_re_suffix"] = "_re"                    
     params["St_adi_ks_im_prefix"] = rt + "/res/St_adi_ks_"
     params["St_adi_ks_im_suffix"] = "_im"                    
@@ -450,11 +436,12 @@ if __name__=='__main__':
     params["init_Chi"] = 2   # triplet
     params["init_time"] = 0  # starting from the first file 
 
-    params["len_traj"] = 50
+    params["len_traj"] = 100
     params["do_collapse"] = 0 # 0 - no decoherence, 1 - decoherence
     params["sh_method"] = 1
     params["num_sh_traj"] = 1000
     params["dt"] = 20
+    params["T"] = 300
     params["sh_method"] = 0 # 0, 1
 
     print params

@@ -46,7 +46,7 @@ params[\"rd\"]=\"$res\"
 params[\"minband\"]=36
 params[\"maxband\"]=37
 params[\"minband_soc\"]=36
-params[\"maxband_soc\"]=37
+params[\"maxband_soc\"]=39
 params[\"nac_method\"]=3
 params[\"wfc_preprocess\"]=\"complete\"
 params[\"do_complete\"]=1
@@ -55,7 +55,7 @@ params[\"prefix1\"]=\"x1.scf\"
 params[\"compute_Hprime\"]=0
 params[\"pptype\"]=\"US\"
 print params
-runMD2.runMD(params)
+runMD3.runMD(params)
 "
 
 

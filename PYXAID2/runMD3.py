@@ -362,6 +362,126 @@ def read_all(wd, order, ind, act_space, info):
     return e, coeff, grid
 
 
+def post_process(coeff, ene, issoc):
+
+    """
+
+    issoc = 0 - no SOC, = 1 - SOC
+
+    In SOC case (spinor):
+
+        coeff[0] - a N_pw x 2*N matrix of type:   (psi_0^alp, psi_0^bet, ... psi_{N-1}^alp, psi_{N-1}^bet) 
+                   where each psi_ is a colum of the PW coefficients for given KS orbital (spatial component 
+                   for each spin)
+
+        ene[0] -   a 2*N x 2*N matrix of energies coming in pairs:  e_{2*i} = e_{2*i+1}, because these are the 
+                   energies of the same orbital, just its different spin components
+
+   
+        We then split the coeff[0] matrix into a pair of N_pw x N matrices that represent alpha and beta
+        spatial components of the wavefunction, separately
+
+        However, the number of <b>spin<\b>-orbitals will be twice that of the N,
+        so we need to construct new matrices with spin-orbitals.
+
+        So that we have both psi_i = (psi_i_alp, psi_i_bet) and psi_{i+N} = (psi_i_bet, psi_i_alp)
+        pairs of spin-orbitals (this is needed to represent the indistinguishable nature of electrons)
+        i = 0,...N-1, where N - is the number of pairs of read spinors  = N_adi_ks_orb
+
+
+    In non-SOC case (spin-polarized):
+    We directly get a pair of N_pw x N_mo_dia matrices that represent alpha and beta spatial components of the wavefunction
+
+        coeff[0] - a N_pw x N matrix of type:   (psi_0^alp, ... psi_{N-1}^alp) 
+        coeff[1] - a N_pw x N matrix of type:   (psi_0^bet, ... psi_{N-1}^bet) 
+
+                   where each psi_ is a colum of the PW coefficients for given KS orbital (spatial component 
+                   for each spin)
+        ene[0] -   a N x N matrix of alpha KS orbital energies
+        ene[1] -   a N x N matrix of beta KS orbital energies
+
+
+
+    Eventually:
+
+                "alpha-block"        "beta-block"
+
+    C_adi[0] = (psi_0^alp,... psi_{N-1}^alp,  psi_N^alp, ... psi_{2N-1}^alp)     alpha-components of spinors 
+    C_adi[1] = (psi_0^bet,... psi_{N-1}^bet,  psi_N^bet, ... psi_{2N-1}^bet)     beta-components of spinors
+
+                  ^                              ^
+                  |______________________________|
+                                |
+        same energies in SOC case or non-polarized non-SOC
+        different energies in spin-polarized non-SOC
+        
+
+    Also:  psi_0^alp = psi_N^bet  and psi_0^bet = psi_N^alp, and so on
+
+             | E^alpha-block          0         |
+    E_adi =  |                                  |
+             |      0             E^beta-block  |
+
+    E^alpha-block  = E^beta-block (SOC or non-polarized non-SOC)
+    E^alpha-block != E^beta-block (spin-polarized non-SOC)
+
+    """
+
+    C, E = None, None
+
+    if issoc==1:  # SOC, spinor case
+
+        c_a, c_b, e_a, e_b = split_orbitals_energies(coeff[0], ene[0])
+
+        N_ks_orb = c_a.num_of_cols  # should be equal to Cb.num_of_cols
+
+        C_a = merge_orbitals(c_a, c_b)
+        C_b = merge_orbitals(c_b, c_a)
+        C = [C_a, C_b]  # "2-component spinor" format
+
+        # Same with energies:
+        E = CMATRIX(2*N_ks_orb, 2*N_ks_orb)
+        push_submatrix(E, e_a, range(0,N_ks_orb), range(0,N_ks_orb) )
+        push_submatrix(E, e_b, range(N_ks_orb,2*N_ks_orb), range(N_ks_orb,2*N_ks_orb) )
+
+
+    elif issoc==0:  # no SOC
+
+        if len(coeff)==1:  # spin-unpolarized (1-k point)
+
+            N_ks_orb = coeff[0].num_of_cols  
+        
+            zero = CMATRIX(coeff[0].num_of_rows, N_ks_orb)
+
+            C_a = merge_orbitals(coeff[0], zero)
+            C_b = merge_orbitals(zero, coeff[0])
+            C = [C_a, C_b]  # "2-component spinor" format
+
+            # Same with energies:
+            E = CMATRIX(N_ks_orb, N_ks_orb)
+            push_submatrix(E, ene[0], range(0,N_ks_orb), range(0,N_ks_orb) )
+            push_submatrix(E, ene[0], range(N_ks_orb,2*N_ks_orb), range(N_ks_orb,2*N_ks_orb) )
+
+
+        elif len(coeff)==2:  # spin-polarized (or 2-k points, non-polarized case, beware!)
+
+            N_ks_orb = coeff[0].num_of_cols  
+        
+            zero = CMATRIX(coeff[0].num_of_rows, N_ks_orb)
+
+            C_a = merge_orbitals(coeff[0], zero)
+            C_b = merge_orbitals(zero, coeff[1])
+            C = [C_a, C_b]  # "2-component spinor" format
+
+            # Same with energies:
+            E = CMATRIX(N_ks_orb, N_ks_orb)
+            push_submatrix(E, ene[0], range(0,N_ks_orb), range(0,N_ks_orb) )
+            push_submatrix(E, ene[1], range(N_ks_orb,2*N_ks_orb), range(N_ks_orb,2*N_ks_orb) )
+
+
+    return C, E
+
+
 
 def runMD(params):
 #------------ Read the parameters -----------------
@@ -460,6 +580,8 @@ def runMD(params):
         # A common block
         # Run calculations
 
+        ############################### Run the QE calculations #####################################
+
         # A regular calculation anyway
         if nac_method == 0 or nac_method == 1 or nac_method == 3:
             os.system( "%s -n %s %s < %s.%d.in > %s.%d.out" % (BATCH_SYSTEM,NP,EXE,prefix0,t,prefix0,t) )
@@ -490,9 +612,13 @@ def runMD(params):
 
         print "Time to run first calculations = ", tim.stop(); 
 
+
+
         # Now general part - from current and next wavefunctions calculate NACs:
         # First see wther the calculation is what we wanted
         if curr_index>=start_indx:
+
+            ############################### Read and put in a proper format #####################################
             tim.start()
             print "Generate NAC from WFCs at two adjacent points"
 
@@ -541,34 +667,33 @@ def runMD(params):
             if nac_method == 0 or nac_method == 1 or nac_method == 3:
                 # read the coefficients anyway
 
-                # Active space lists only spatial indices: e.g. [1,2] would mean to include
-                # both alpha and beta orbitals, so one can consider configurations like 
-                # [1,2], [1,-2], [-1,-2] or [-1,2]
-
                 #====== Current electronic structure ========
-                e_curr0, coeff_curr0, grid_curr0 = read_all(wd, "curr", 0, act_sp1, info0)
+                e_curr, coeff_curr, grid_curr = read_all(wd, "curr", 0, act_sp1, info0)
+                C_dia_curr, E_dia_curr = post_process(coeff_curr, e_curr, 0)
 
                 #====== Next electronic structure ===========
-                e_next0, coeff_next0, grid_next0 = read_all(wd, "next", 0, act_sp1, info0)
-
-
+                e_next, coeff_next, grid_next = read_all(wd, "next", 0, act_sp1, info0)
+                C_dia_next, E_dia_next = post_process(coeff_next, e_next, 0)
 
             if nac_method == 2 or nac_method == 3:
 
-                # Active space is composed of spin-orbitals: e.g. [1,2,3,4] are all distinct spin-orbitals
-
                 #====== Current electron electructure =======
-                e_curr1, coeff_curr1, grid_curr1 = read_all(wd, "curr", 1, act_sp2, info1)
+                e_curr, coeff_curr, grid_curr = read_all(wd, "curr", 1, act_sp2, info1)
+                C_adi_curr, E_adi_curr = post_process(coeff_curr, e_curr, 1)
+               
+
 
                 #====== Next electronic structure ===========
-                e_next1, coeff_next1, grid_next1 = read_all(wd, "next", 1, act_sp2, info1)
-
+                e_next, coeff_next, grid_next = read_all(wd, "next", 1, act_sp2, info1)
+                C_adi_next, E_adi_next = post_process(coeff_next, e_next, 1)
+                
                 
  
             print "Time to read index, wfc, and wfc grids = ", tim.stop();
 
-            ######################################### NAC calculation #######################################
+            ############################## Compute: NAC calculation #######################################
             # Finally compute Hamiltonian and the overlap matrix
+
             H, S, H_soc, S_soc  = None, None, None, None
             # H, vibronic Ham for non-relativistic calculation
             # H_soc, vibronic Ham for relativistic calculation
@@ -760,12 +885,13 @@ def runMD(params):
                 info_wfc1 = QE_methods.read_qe_wfc_info("%s/curr1/x1.export/wfc.1" % wd,0)
 
                 if info_wfc0["ngw"] != info_wfc1["ngw"]:
-                    print "Error: the number of plane waves between diabatic and adiabatic does not equal"
+                    print "Error: the number of plane waves if diabatic and adiabatic functions should be equal"
                     sys.exit(0)
 
 
                 params = {"do_orth": 0, "root_directory": rd, "curr_index": curr_index, "print_overlaps": 1, "dt": dt}
                 compute_ovlps(coeff_curr0, coeff_next0, coeff_curr1, coeff_next1, e_curr0, e_next0, e_curr1, e_next1, params)
+
 
 
             if nac_method == 0 or nac_method == 1 or nac_method == 3:

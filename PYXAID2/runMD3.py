@@ -209,8 +209,7 @@ def orthogonalize_orbitals2(Ca,Cb):
     return Ca_tilda, Cb_tilda
 
 
-def compute_ovlps(coeff_curr0, coeff_next0, coeff_curr1, coeff_next1,
-            e_curr0, e_next0, e_curr1, e_next1, params):
+def compute_ovlps(C_dia_curr, C_dia_next, C_adi_curr, C_adi_next, E_dia_curr,  E_dia_next, E_adi_curr, E_adi_next, params):
     """ 
     This function implements the computation of elementary overlaps
 
@@ -241,76 +240,31 @@ def compute_ovlps(coeff_curr0, coeff_next0, coeff_curr1, coeff_next1,
     curr_index = params["curr_index"] # a counter for the files
     dt = params["dt"]
 
-    #========== Orthogonalize orbitals =========================
-    # spin-adiabatic orbitals
-    c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = None, None, None, None
-    c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = None, None, None, None
-
-    if do_orth:
-        a, b, e_adi_curr_a, e_adi_curr_b = split_orbitals_energies(coeff_curr1[0], e_curr1[0])
-        c_adi_curr_a, c_adi_curr_b = orthogonalize_orbitals2(a, b)
-
-        a, b, e_adi_next_a, e_adi_next_b = split_orbitals_energies(coeff_next1[0], e_next1[0])
-        c_adi_next_a, c_adi_next_b = orthogonalize_orbitals2(a, b)
-    else:
-        # Here, we copy matrices by references, but that is okay
-        # since we don't modify the final matrix
-        c_adi_curr_a, c_adi_curr_b, e_adi_curr_a, e_adi_curr_b = split_orbitals_energies(coeff_curr1[0], e_curr1[0])
-        c_adi_next_a, c_adi_next_b, e_adi_next_a, e_adi_next_b = split_orbitals_energies(coeff_next1[0], e_next1[0])
-
-    # collect the adi coefficient
-    C_adi = []
-    C_adi.append(c_adi_curr_a)
-    C_adi.append(c_adi_curr_b)
-
-    # spin-diabatic orbitals
-    c_dia_curr_a, c_dia_curr_b = None, None
-    if do_orth:
-        c_dia_curr_a = orthogonalize_orbitals(coeff_curr0[0])
-        c_dia_curr_b = orthogonalize_orbitals(coeff_curr0[1]) 
-    else:
-        c_dia_curr_a = coeff_curr0[0]
-        c_dia_curr_b = coeff_curr0[1]
-
-    N_pw = coeff_curr0[0].num_of_rows
-    N_mo_dia = coeff_curr0[0].num_of_cols
-
-    C_dia_a = CMATRIX(N_pw,2*N_mo_dia)
-    C_dia_b = CMATRIX(N_pw,2*N_mo_dia)
-
-    stenc1, stenc2 = [], []
-    for i in xrange(N_mo_dia):
-        stenc1.append(2*i)
-        stenc2.append(2*i+1)
-
-    push_submatrix(C_dia_a, c_dia_curr_a, range(0, N_pw), stenc1 )
-    push_submatrix(C_dia_b, c_dia_curr_b, range(0, N_pw), stenc2 )
-
-    # collect the diabatic coefficient
-    C_dia = []
-    C_dia.append(C_dia_a)
-    C_dia.append(C_dia_b)
-
-    # the elementary projections
-    # <phi(t)|psi(t)> 
-    ovlp_da = mapping.elementary_overlap(C_dia, C_adi) 
+    # the elementary overlap
+    # diabatic-diabatic overlap at time t
+    ovlp_da = mapping.elementary_overlap(C_dia_curr, C_adi_curr) 
     ovlp_da.real().show_matrix("%s/S_dia_adi_ks_%d_re" % (rd, curr_index))
     ovlp_da.imag().show_matrix("%s/S_dia_adi_ks_%d_im" % (rd, curr_index))
 
     # adiabatic energy
-    Eadi = 0.5* (e_adi_curr_a + e_adi_next_a)
+    Eadi = 0.5* (E_adi_curr + E_adi_next)
     Eadi.real().show_matrix("%s/E_adi_ks_%d_re" % (rd, curr_index))
     Eadi.imag().show_matrix("%s/E_adi_ks_%d_im" % (rd, curr_index))
 
-    # diabatic-diabatic overlap
-    ovlp_dd = mapping.elementary_overlap(C_dia, C_dia) 
+    # diabatic-diabatic overlap at time t
+    ovlp_dd = mapping.elementary_overlap(C_dia_curr, C_dia_curr) 
     ovlp_dd.real().show_matrix("%s/S_dia_ks_%d_re" % (rd, curr_index))
     ovlp_dd.imag().show_matrix("%s/S_dia_ks_%d_im" % (rd, curr_index))
 
-    # adiabatic-adiabatic overlap        
-    ovlp_aa = mapping.elementary_overlap(C_adi, C_adi) 
+    # adiabatic-adiabatic overlap at time t       
+    ovlp_aa = mapping.elementary_overlap(C_adi_curr, C_adi_curr) 
     ovlp_aa.real().show_matrix("%s/S_adi_ks_%d_re" % (rd, curr_index))
-    ovlp_aa.imag().show_matrix("%s/S_adi_ks_%d_im" % (rd, curr_index))        
+    ovlp_aa.imag().show_matrix("%s/S_adi_ks_%d_im" % (rd, curr_index)) 
+    
+    # adiabatic(t)-adiabatic(t+dt) overlap        
+    ovlp_aat = mapping.elementary_overlap(C_adi_curr, C_adi_next) 
+    ovlp_aat.real().show_matrix("%s/St_adi_ks_%d_re" % (rd, curr_index))
+    ovlp_aat.imag().show_matrix("%s/St_adi_ks_%d_im" % (rd, curr_index))       
 
 
 def read_all(wd, order, ind, act_space, info):
@@ -444,40 +398,34 @@ def post_process(coeff, ene, issoc):
         push_submatrix(E, e_a, range(0,N_ks_orb), range(0,N_ks_orb) )
         push_submatrix(E, e_b, range(N_ks_orb,2*N_ks_orb), range(N_ks_orb,2*N_ks_orb) )
 
-
     elif issoc==0:  # no SOC
 
         if len(coeff)==1:  # spin-unpolarized (1-k point)
 
             N_ks_orb = coeff[0].num_of_cols  
-        
             zero = CMATRIX(coeff[0].num_of_rows, N_ks_orb)
-
             C_a = merge_orbitals(coeff[0], zero)
             C_b = merge_orbitals(zero, coeff[0])
+
             C = [C_a, C_b]  # "2-component spinor" format
 
             # Same with energies:
-            E = CMATRIX(N_ks_orb, N_ks_orb)
+            E = CMATRIX(2*N_ks_orb, 2*N_ks_orb)
             push_submatrix(E, ene[0], range(0,N_ks_orb), range(0,N_ks_orb) )
             push_submatrix(E, ene[0], range(N_ks_orb,2*N_ks_orb), range(N_ks_orb,2*N_ks_orb) )
-
 
         elif len(coeff)==2:  # spin-polarized (or 2-k points, non-polarized case, beware!)
 
             N_ks_orb = coeff[0].num_of_cols  
-        
             zero = CMATRIX(coeff[0].num_of_rows, N_ks_orb)
-
             C_a = merge_orbitals(coeff[0], zero)
             C_b = merge_orbitals(zero, coeff[1])
             C = [C_a, C_b]  # "2-component spinor" format
 
             # Same with energies:
-            E = CMATRIX(N_ks_orb, N_ks_orb)
+            E = CMATRIX(2*N_ks_orb, 2*N_ks_orb)
             push_submatrix(E, ene[0], range(0,N_ks_orb), range(0,N_ks_orb) )
             push_submatrix(E, ene[1], range(N_ks_orb,2*N_ks_orb), range(N_ks_orb,2*N_ks_orb) )
-
 
     return C, E
 
@@ -660,7 +608,7 @@ def runMD(params):
 
                 print "The total # of k-points (soc) is: ", info1["nk"]
 
-
+            
 
             # read the coefficients and energies for the mluti k-points cases, even if some cases require gamma only
                         
@@ -668,29 +616,33 @@ def runMD(params):
                 # read the coefficients anyway
 
                 #====== Current electronic structure ========
-                e_curr, coeff_curr, grid_curr = read_all(wd, "curr", 0, act_sp1, info0)
-                C_dia_curr, E_dia_curr = post_process(coeff_curr, e_curr, 0)
+                e_curr0, coeff_curr0, grid_curr0 = read_all(wd, "curr", 0, act_sp1, info0)
+                C_dia_curr, E_dia_curr = post_process(coeff_curr0, e_curr0, 0)
 
                 #====== Next electronic structure ===========
-                e_next, coeff_next, grid_next = read_all(wd, "next", 0, act_sp1, info0)
-                C_dia_next, E_dia_next = post_process(coeff_next, e_next, 0)
+                e_next0, coeff_next0, grid_next0 = read_all(wd, "next", 0, act_sp1, info0)
+                C_dia_next, E_dia_next = post_process(coeff_next0, e_next0, 0)
 
             if nac_method == 2 or nac_method == 3:
 
                 #====== Current electron electructure =======
-                e_curr, coeff_curr, grid_curr = read_all(wd, "curr", 1, act_sp2, info1)
-                C_adi_curr, E_adi_curr = post_process(coeff_curr, e_curr, 1)
+                e_curr1, coeff_curr1, grid_curr1 = read_all(wd, "curr", 1, act_sp2, info1)
+                C_adi_curr, E_adi_curr = post_process(coeff_curr1, e_curr1, 1)
                
 
 
                 #====== Next electronic structure ===========
-                e_next, coeff_next, grid_next = read_all(wd, "next", 1, act_sp2, info1)
-                C_adi_next, E_adi_next = post_process(coeff_next, e_next, 1)
+                e_next1, coeff_next1, grid_next1 = read_all(wd, "next", 1, act_sp2, info1)
+                C_adi_next, E_adi_next = post_process(coeff_next1, e_next1, 1)
                 
                 
  
             print "Time to read index, wfc, and wfc grids = ", tim.stop();
 
+
+
+
+            #sys.exit(0)
             ############################## Compute: NAC calculation #######################################
             # Finally compute Hamiltonian and the overlap matrix
 
@@ -867,14 +819,12 @@ def runMD(params):
                     sig2.imag().show_matrix("%s/0_sig2_%d_im" % (rd, curr_index) )
                     sig3.real().show_matrix("%s/0_sig3_%d_re" % (rd, curr_index) )
                     sig3.imag().show_matrix("%s/0_sig3_%d_im" % (rd, curr_index) )
-                    nac.real().show_matrix("%s/St_adi_ks_%d_re" % (rd, curr_index) )
-                    nac.imag().show_matrix("%s/St_adi_ks_%d_im" % (rd, curr_index) )
                 else:
                     print "Multiple k-points scheme with SOC is not yet implemented"
                     sys.exit(0)
 
             
-            # spin-polarized case
+            # finally, compute the adiabatic-diabatic overlap/projection
             if  nac_method == 3:
                 # check whether the adiabatic and diabatic basis have the same number of plane waves
                 # the reason why I used the read_qe_wfc_info is because I will need the ngw 
@@ -890,7 +840,7 @@ def runMD(params):
 
 
                 params = {"do_orth": 0, "root_directory": rd, "curr_index": curr_index, "print_overlaps": 1, "dt": dt}
-                compute_ovlps(coeff_curr0, coeff_next0, coeff_curr1, coeff_next1, e_curr0, e_next0, e_curr1, e_next1, params)
+                compute_ovlps(C_dia_curr, C_dia_next, C_adi_curr, C_adi_next, E_dia_curr,  E_dia_next, E_adi_curr, E_adi_next, params)
 
 
 

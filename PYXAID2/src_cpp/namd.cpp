@@ -55,13 +55,18 @@ void hop(vector<double>& sh_prob,int& hopstate,int numstates){
   for(i=0;i<numstates;i++){
     if(i==0){ left = 0.0; right = (sh_prob[in*numstates+i]/nrm); }
     else{ left = right;   right += (sh_prob[in*numstates+i]/nrm); }
-    if((left<ksi) && (ksi<=right)){ hstate = i; }
+    if((left<ksi) && (ksi<=right)){ hstate = i; break;} // add a break here, Haowei
   }
   hopstate = hstate;
 
   if(hstate==-1){
-    std::cout<<"Something is wrong in hop(...) function\nExiting now...\n";
-    exit(0);
+    left = 1.0/((double)RAND_MAX); // borrow left here
+         if(ksi<left){hopstate=0;} // ksi=0.0, sh_prob=[0.0, 0.1, ...]. haowei
+    else if(ksi>1.0-left){hopstate=numstates-1;} // ksi=1.0, not needed but add anyway
+    else{
+      std::cout<< "ksi, right, nrm: " << ksi << right << nrm << endl;
+      std::cout<<"Something is wrong in hop(...) function\nExiting now...\n";
+      exit(0);
   }
    
 
